@@ -17,9 +17,9 @@ function CategoryKindPanel({ kind }: { kind: CategoryKind }) {
   const { createCategory } = useCategoryMutations(kind)
   const [addOpen, setAddOpen] = useState(false)
 
-  async function handleCreate(values: { name: string }) {
+  async function handleCreate(values: { name: string; icon: string | null }) {
     try {
-      await createCategory.mutateAsync({ name: values.name, icon: null })
+      await createCategory.mutateAsync({ name: values.name, icon: values.icon })
       toast.success('Category created.')
     } catch (error) {
       toast.error(error instanceof ApiRequestError ? error.message : 'Unable to create category.')
@@ -60,6 +60,7 @@ function CategoryKindPanel({ kind }: { kind: CategoryKind }) {
         open={addOpen}
         onOpenChange={setAddOpen}
         title="Add Category"
+        showIcon
         onSubmit={handleCreate}
       />
     </div>

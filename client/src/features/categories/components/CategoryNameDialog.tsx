@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { IconPicker } from '@/components/common/IconPicker'
 import { Input } from '@/components/ui/input'
 import { categoryNameSchema, type CategoryNameFormValues } from '@/lib/validation/categorySchema'
 
@@ -13,20 +14,30 @@ interface CategoryNameDialogProps {
   onOpenChange: (open: boolean) => void
   title: string
   initialName?: string
+  initialIcon?: string | null
+  showIcon?: boolean
   onSubmit: (values: CategoryNameFormValues) => Promise<void>
 }
 
-export function CategoryNameDialog({ open, onOpenChange, title, initialName, onSubmit }: CategoryNameDialogProps) {
+export function CategoryNameDialog({
+  open,
+  onOpenChange,
+  title,
+  initialName,
+  initialIcon,
+  showIcon,
+  onSubmit,
+}: CategoryNameDialogProps) {
   const form = useForm<CategoryNameFormValues>({
     resolver: zodResolver(categoryNameSchema),
-    defaultValues: { name: initialName ?? '' },
+    defaultValues: { name: initialName ?? '', icon: initialIcon ?? null },
   })
 
   useEffect(() => {
     if (open) {
-      form.reset({ name: initialName ?? '' })
+      form.reset({ name: initialName ?? '', icon: initialIcon ?? null })
     }
-  }, [open, initialName, form])
+  }, [open, initialName, initialIcon, form])
 
   async function handleSubmit(values: CategoryNameFormValues) {
     await onSubmit(values)
@@ -41,19 +52,47 @@ export function CategoryNameDialog({ open, onOpenChange, title, initialName, onS
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input autoFocus {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {showIcon ? (
+              <div className="flex items-end gap-3">
+                <FormField
+                  control={form.control}
+                  name="icon"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Icon</FormLabel>
+                      <IconPicker value={field.value} onChange={field.onChange} />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input autoFocus {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            ) : (
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input autoFocus {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}

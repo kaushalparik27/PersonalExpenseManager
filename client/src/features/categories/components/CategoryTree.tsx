@@ -23,6 +23,7 @@ import { CategoryNameDialog } from '@/features/categories/components/CategoryNam
 import { useCategoryMutations } from '@/features/categories/hooks/useCategoryMutations'
 import type { Category, CategoryKind, SubCategory } from '@/features/categories/types'
 import { ApiRequestError } from '@/lib/api/client'
+import { resolveCategoryIcon } from '@/lib/categoryIcons'
 import { cn } from 'cn'
 
 interface CategoryTreeProps {
@@ -103,7 +104,7 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
     }
   }
 
-  async function handleDialogSubmit(values: { name: string }) {
+  async function handleDialogSubmit(values: { name: string; icon: string | null }) {
     if (!dialog) return
 
     try {
@@ -111,7 +112,7 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
         await mutations.updateCategory.mutateAsync({
           id: dialog.category.id,
           name: values.name,
-          icon: dialog.category.icon,
+          icon: values.icon,
           isArchived: dialog.category.isArchived,
         })
         toast.success('Category updated.')
@@ -150,6 +151,13 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
                   <ChevronRight className="size-4" />
                 )}
               </button>
+
+              {(() => {
+                const CategoryIcon = resolveCategoryIcon(category.icon)
+                return CategoryIcon ? (
+                  <CategoryIcon className="size-4 shrink-0 text-muted-foreground" />
+                ) : null
+              })()}
 
               <span className={cn('flex-1 text-sm font-medium', category.isArchived && 'text-muted-foreground')}>
                 {category.name}
@@ -296,6 +304,8 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
               ? dialog.subCategory.name
               : ''
         }
+        initialIcon={dialog?.type === 'edit-category' ? dialog.category.icon : null}
+        showIcon={dialog?.type === 'edit-category'}
         onSubmit={handleDialogSubmit}
       />
     </>
