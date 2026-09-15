@@ -64,6 +64,10 @@ public static class DependencyInjection
         services.AddScoped<IAccountQueries, AccountQueries>();
         services.AddScoped<IAccountCommands, AccountCommands>();
         services.AddScoped<IDefaultCategorySeeder, DefaultCategorySeeder>();
+        services.AddScoped<IExpenseCategoryQueries, ExpenseCategoryQueries>();
+        services.AddScoped<IExpenseCategoryCommands, ExpenseCategoryCommands>();
+        services.AddScoped<IIncomeCategoryQueries, IncomeCategoryQueries>();
+        services.AddScoped<IIncomeCategoryCommands, IncomeCategoryCommands>();
 
         return services;
     }
