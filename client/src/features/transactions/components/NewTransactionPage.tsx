@@ -24,6 +24,19 @@ export function NewTransactionPage() {
   const recent = getRecentSelections()
 
   const activeTab = searchParams.get('type') ?? 'expense'
+  // Deep-linked from an account (e.g. "Add Transaction" on the Accounts page)
+  // takes priority over the last-used account remembered for quick entry.
+  const preselectedAccountId = searchParams.get('accountId') ?? undefined
+  const defaultAccountId = preselectedAccountId ?? recent.accountId
+
+  // Deep-linked from a category/subcategory (e.g. "Add Transaction" on the
+  // Categories page) similarly takes priority over the last-used category.
+  const preselectedCategoryId = searchParams.get('categoryId') ?? undefined
+  const preselectedSubCategoryId = searchParams.get('subCategoryId') ?? undefined
+  const defaultExpenseCategoryId =
+    activeTab === 'expense' && preselectedCategoryId ? preselectedCategoryId : recent.expenseCategoryId
+  const defaultIncomeCategoryId =
+    activeTab === 'income' && preselectedCategoryId ? preselectedCategoryId : recent.incomeCategoryId
 
   async function handleExpenseSubmit(values: ExpenseFormSubmitValues, addAnother: boolean) {
     try {
@@ -96,8 +109,10 @@ export function NewTransactionPage() {
             submitLabel="Save Expense"
             showSaveAndAddAnother
             defaultValues={{
-              accountId: recent.accountId,
-              expenseCategoryId: recent.expenseCategoryId,
+              accountId: defaultAccountId,
+              expenseCategoryId: defaultExpenseCategoryId,
+              expenseSubCategoryId:
+                activeTab === 'expense' ? (preselectedSubCategoryId ?? undefined) : undefined,
             }}
             onSubmit={handleExpenseSubmit}
           />
@@ -108,15 +123,21 @@ export function NewTransactionPage() {
             submitLabel="Save Income"
             showSaveAndAddAnother
             defaultValues={{
-              accountId: recent.accountId,
-              incomeCategoryId: recent.incomeCategoryId,
+              accountId: defaultAccountId,
+              incomeCategoryId: defaultIncomeCategoryId,
+              incomeSubCategoryId:
+                activeTab === 'income' ? (preselectedSubCategoryId ?? undefined) : undefined,
             }}
             onSubmit={handleIncomeSubmit}
           />
         </TabsContent>
 
         <TabsContent value="transfer" className="mt-4">
-          <TransferForm submitLabel="Save Transfer" onSubmit={handleTransferSubmit} />
+          <TransferForm
+            submitLabel="Save Transfer"
+            defaultValues={{ accountId: defaultAccountId }}
+            onSubmit={handleTransferSubmit}
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,5 +1,6 @@
-import { Eye, EyeOff, MoreVertical, Pencil, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -33,6 +34,7 @@ interface AccountCardProps {
 }
 
 export function AccountCard({ account }: AccountCardProps) {
+  const navigate = useNavigate()
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const archiveAccount = useArchiveAccount()
@@ -40,6 +42,10 @@ export function AccountCard({ account }: AccountCardProps) {
   const deleteAccount = useDeleteAccount()
 
   const { label, icon: Icon } = accountTypeMeta[account.accountType]
+
+  function handleAddTransaction() {
+    navigate(`/transactions/new?accountId=${account.id}`)
+  }
 
   async function handleHide() {
     try {
@@ -76,7 +82,21 @@ export function AccountCard({ account }: AccountCardProps) {
 
   return (
     <>
-      <Card className={cn(!account.isActive && 'opacity-60')}>
+      <Card
+        role="button"
+        tabIndex={0}
+        onClick={() => setEditOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setEditOpen(true)
+          }
+        }}
+        className={cn(
+          'cursor-pointer transition-colors hover:bg-accent/40',
+          !account.isActive && 'opacity-60',
+        )}
+      >
         <CardContent className="flex items-start gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
             <Icon className="size-5 text-primary" />
@@ -104,11 +124,21 @@ export function AccountCard({ account }: AccountCardProps) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8 shrink-0" aria-label="Account actions">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 shrink-0"
+                aria-label="Account actions"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <MoreVertical className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={handleAddTransaction}>
+                <Plus className="size-4" />
+                Add Transaction
+              </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setEditOpen(true)}>
                 <Pencil className="size-4" />
                 Edit

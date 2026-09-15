@@ -9,6 +9,7 @@ import {
   ArrowDown,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -38,11 +39,20 @@ type DialogState =
   | null
 
 export function CategoryTree({ kind, categories }: CategoryTreeProps) {
+  const navigate = useNavigate()
   const mutations = useCategoryMutations(kind)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [dialog, setDialog] = useState<DialogState>(null)
 
   const sorted = [...categories].sort((a, b) => a.displayOrder - b.displayOrder)
+
+  function handleAddTransaction(category: Category, subCategory?: SubCategory) {
+    const params = new URLSearchParams({ type: kind, categoryId: category.id })
+    if (subCategory) {
+      params.set('subCategoryId', subCategory.id)
+    }
+    navigate(`/transactions/new?${params.toString()}`)
+  }
 
   function isExpanded(categoryId: string) {
     return expanded[categoryId] ?? true
@@ -185,6 +195,12 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {!category.isArchived && (
+                    <DropdownMenuItem onSelect={() => handleAddTransaction(category)}>
+                      <Plus className="size-4" />
+                      Add Transaction
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onSelect={() => setDialog({ type: 'edit-category', category })}>
                     <Pencil className="size-4" />
                     Edit
@@ -258,6 +274,12 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          {!category.isArchived && !subCategory.isArchived && (
+                            <DropdownMenuItem onSelect={() => handleAddTransaction(category, subCategory)}>
+                              <Plus className="size-4" />
+                              Add Transaction
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onSelect={() => setDialog({ type: 'edit-subcategory', category, subCategory })}
                           >
