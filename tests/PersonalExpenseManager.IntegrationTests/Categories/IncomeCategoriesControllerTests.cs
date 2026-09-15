@@ -42,6 +42,29 @@ public class IncomeCategoriesControllerTests(CustomWebApplicationFactory factory
     }
 
     [Fact]
+    public async Task UpdateSubCategory_MoveToAnotherCategory_ChangesParent()
+    {
+        var (client, _) = await TestAuthHelper.RegisterAndLoginAsync(factory);
+        var categoryAResponse = await client.PostAsJsonAsync("/api/income-categories", new CreateCategoryRequest("Business", null));
+        var categoryA = (await categoryAResponse.Content.ReadFromJsonAsync<ApiResponse<CategoryDto>>())!.Data!;
+        var categoryBResponse = await client.PostAsJsonAsync("/api/income-categories", new CreateCategoryRequest("Freelance", null));
+        var categoryB = (await categoryBResponse.Content.ReadFromJsonAsync<ApiResponse<CategoryDto>>())!.Data!;
+
+        var subResponse = await client.PostAsJsonAsync($"/api/income-categories/{categoryA.Id}/subcategories", new CreateSubCategoryRequest("Client A"));
+        var sub = (await subResponse.Content.ReadFromJsonAsync<ApiResponse<SubCategoryDto>>())!.Data!;
+
+        var moveResponse = await client.PutAsJsonAsync(
+            $"/api/income-categories/subcategories/{sub.Id}",
+            new UpdateSubCategoryRequest("Client A", categoryB.Id, false));
+
+        var getResponse = await client.GetAsync("/api/income-categories");
+        var body = await getResponse.Content.ReadFromJsonAsync<ApiResponse<List<CategoryDto>>>();
+
+        Assert.Equal(HttpStatusCode.OK, moveResponse.StatusCode);
+        Assert.Contains(body!.Data!.Single(c => c.Id == categoryB.Id).SubCategories, s => s.Id == sub.Id);
+    }
+
+    [Fact]
     public async Task AnonymousUser_CannotListIncomeCategories()
     {
         var client = factory.CreateClient();

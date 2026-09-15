@@ -104,7 +104,7 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
     }
   }
 
-  async function handleDialogSubmit(values: { name: string; icon: string | null }) {
+  async function handleDialogSubmit(values: { name: string; icon: string | null; categoryId: string }) {
     if (!dialog) return
 
     try {
@@ -123,9 +123,11 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
         await mutations.updateSubCategory.mutateAsync({
           id: dialog.subCategory.id,
           name: values.name,
+          categoryId: values.categoryId,
           isArchived: dialog.subCategory.isArchived,
         })
-        toast.success('Subcategory updated.')
+        const moved = values.categoryId !== dialog.category.id
+        toast.success(moved ? 'Subcategory moved.' : 'Subcategory updated.')
       }
     } catch (error) {
       toast.error(error instanceof ApiRequestError ? error.message : 'Unable to save.')
@@ -306,6 +308,9 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
         }
         initialIcon={dialog?.type === 'edit-category' ? dialog.category.icon : null}
         showIcon={dialog?.type === 'edit-category'}
+        initialCategoryId={dialog?.type === 'edit-subcategory' ? dialog.category.id : undefined}
+        showCategorySelect={dialog?.type === 'edit-subcategory'}
+        categoryOptions={sorted.filter((c) => !c.isArchived).map((c) => ({ value: c.id, label: c.name }))}
         onSubmit={handleDialogSubmit}
       />
     </>

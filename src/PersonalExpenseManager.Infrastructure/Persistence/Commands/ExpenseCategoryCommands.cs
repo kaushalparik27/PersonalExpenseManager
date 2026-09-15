@@ -145,13 +145,33 @@ public class ExpenseCategoryCommands(ApplicationDbContext db) : IExpenseCategory
             return MutationResult<SubCategoryDto>.NotFound();
         }
 
+        var targetCategoryExists = await db.ExpenseCategories.AnyAsync(c => c.Id == request.CategoryId && c.UserId == userId, cancellationToken);
+        if (!targetCategoryExists)
+        {
+            return MutationResult<SubCategoryDto>.Fail("Category not found.");
+        }
+
         var nameTaken = await db.ExpenseSubCategories.AnyAsync(
-            s => s.ExpenseCategoryId == subCategory.ExpenseCategoryId && s.Id != subCategoryId && s.Name == request.Name,
+            s => s.ExpenseCategoryId == request.CategoryId && s.Id != subCategoryId && s.Name == request.Name,
             cancellationToken);
 
         if (nameTaken)
         {
             return MutationResult<SubCategoryDto>.Fail("A subcategory with this name already exists in this category.");
+        }
+
+        if (subCategory.ExpenseCategoryId != request.CategoryId)
+        {
+            // Moving to a new parent: append at the end of its subcategory list
+            // rather than keeping the old DisplayOrder, which was only ever
+            // meaningful relative to the old parent's other subcategories.
+            var nextDisplayOrder = 1 + (await db.ExpenseSubCategories
+                .Where(s => s.ExpenseCategoryId == request.CategoryId)
+                .Select(s => (int?)s.DisplayOrder)
+                .MaxAsync(cancellationToken) ?? -1);
+
+            subCategory.ExpenseCategoryId = request.CategoryId;
+            subCategory.DisplayOrder = nextDisplayOrder;
         }
 
         subCategory.Name = request.Name;

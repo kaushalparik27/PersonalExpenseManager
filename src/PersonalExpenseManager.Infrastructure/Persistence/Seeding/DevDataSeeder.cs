@@ -16,13 +16,31 @@ public static class DevDataSeeder
     public const string DemoEmail = "demo@example.com";
     public const string DemoPassword = "Demo!Passw0rd";
 
-    private static readonly string[] ExpenseCategoryNames =
+    // Icon values must match a key in the frontend's CATEGORY_ICON_ENTRIES
+    // (client/src/lib/categoryIcons.ts) — kept in sync manually since the icon
+    // registry lives client-side and the backend just stores an opaque string.
+    private static readonly (string Name, string Icon)[] ExpenseCategories =
     [
-        "Food", "Transportation", "Utilities", "Home", "Healthcare",
-        "Entertainment", "Shopping", "Education", "Insurance", "Investment", "Other",
+        ("Food", "Utensils"),
+        ("Transportation", "Car"),
+        ("Utilities", "Lightbulb"),
+        ("Home", "Home"),
+        ("Healthcare", "HeartPulse"),
+        ("Entertainment", "Clapperboard"),
+        ("Shopping", "ShoppingBag"),
+        ("Education", "GraduationCap"),
+        ("Insurance", "Shield"),
+        ("Investment", "TrendingUp"),
+        ("Other", "Tag"),
     ];
 
-    private static readonly string[] IncomeCategoryNames = ["Salary", "Freelance", "Interest", "Other Income"];
+    private static readonly (string Name, string Icon)[] IncomeCategories =
+    [
+        ("Salary", "Landmark"),
+        ("Freelance", "HandCoins"),
+        ("Interest", "Percent"),
+        ("Other Income", "Tag"),
+    ];
 
     public static async Task SeedAsync(IServiceProvider services, CancellationToken cancellationToken = default)
     {
@@ -57,8 +75,8 @@ public static class DevDataSeeder
         var creditCard = new Account { UserId = user.Id, Name = "HDFC Credit Card", AccountType = AccountType.CreditCard, OpeningBalance = 0m, DisplayOrder = 3 };
         db.Accounts.AddRange(bank, sbi, cash, creditCard);
 
-        var expenseCategories = ExpenseCategoryNames
-            .Select((name, index) => new ExpenseCategory { UserId = user.Id, Name = name, DisplayOrder = index })
+        var expenseCategories = ExpenseCategories
+            .Select((c, index) => new ExpenseCategory { UserId = user.Id, Name = c.Name, Icon = c.Icon, DisplayOrder = index })
             .ToArray();
         db.ExpenseCategories.AddRange(expenseCategories);
 
@@ -79,8 +97,8 @@ public static class DevDataSeeder
         var mobile = Sub(utilities, "Mobile", 2);
         db.ExpenseSubCategories.AddRange(groceries, restaurants, delivery, fuel, taxi, electricity, internet, mobile);
 
-        var incomeCategories = IncomeCategoryNames
-            .Select((name, index) => new IncomeCategory { UserId = user.Id, Name = name, DisplayOrder = index })
+        var incomeCategories = IncomeCategories
+            .Select((c, index) => new IncomeCategory { UserId = user.Id, Name = c.Name, Icon = c.Icon, DisplayOrder = index })
             .ToArray();
         db.IncomeCategories.AddRange(incomeCategories);
 

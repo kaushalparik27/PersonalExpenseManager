@@ -108,6 +108,76 @@ public class ExpenseCategoriesControllerTests(CustomWebApplicationFactory factor
     }
 
     [Fact]
+    public async Task UpdateSubCategory_MoveToAnotherCategory_ChangesParentAndAppendsAtEnd()
+    {
+        var (client, _) = await TestAuthHelper.RegisterAndLoginAsync(factory);
+        var categoryAResponse = await client.PostAsJsonAsync("/api/expense-categories", new CreateCategoryRequest(UniqueName("CategoryA"), null));
+        var categoryA = (await categoryAResponse.Content.ReadFromJsonAsync<ApiResponse<CategoryDto>>())!.Data!;
+        var categoryBResponse = await client.PostAsJsonAsync("/api/expense-categories", new CreateCategoryRequest(UniqueName("CategoryB"), null));
+        var categoryB = (await categoryBResponse.Content.ReadFromJsonAsync<ApiResponse<CategoryDto>>())!.Data!;
+
+        var subResponse = await client.PostAsJsonAsync($"/api/expense-categories/{categoryA.Id}/subcategories", new CreateSubCategoryRequest("Movable"));
+        var sub = (await subResponse.Content.ReadFromJsonAsync<ApiResponse<SubCategoryDto>>())!.Data!;
+        // categoryB already has one subcategory, so the moved one should land after it (DisplayOrder 1).
+        await client.PostAsJsonAsync($"/api/expense-categories/{categoryB.Id}/subcategories", new CreateSubCategoryRequest("Existing"));
+
+        var moveResponse = await client.PutAsJsonAsync(
+            $"/api/expense-categories/subcategories/{sub.Id}",
+            new UpdateSubCategoryRequest("Movable", categoryB.Id, false));
+        var moved = (await moveResponse.Content.ReadFromJsonAsync<ApiResponse<SubCategoryDto>>())!.Data!;
+
+        var getResponse = await client.GetAsync("/api/expense-categories");
+        var body = await getResponse.Content.ReadFromJsonAsync<ApiResponse<List<CategoryDto>>>();
+        var reloadedA = body!.Data!.Single(c => c.Id == categoryA.Id);
+        var reloadedB = body.Data!.Single(c => c.Id == categoryB.Id);
+
+        Assert.Equal(HttpStatusCode.OK, moveResponse.StatusCode);
+        Assert.Equal(1, moved.DisplayOrder);
+        Assert.DoesNotContain(reloadedA.SubCategories, s => s.Id == sub.Id);
+        Assert.Contains(reloadedB.SubCategories, s => s.Id == sub.Id);
+    }
+
+    [Fact]
+    public async Task UpdateSubCategory_MoveToCategoryWithDuplicateName_ReturnsUnprocessableEntity()
+    {
+        var (client, _) = await TestAuthHelper.RegisterAndLoginAsync(factory);
+        var categoryAResponse = await client.PostAsJsonAsync("/api/expense-categories", new CreateCategoryRequest(UniqueName("CategoryA"), null));
+        var categoryA = (await categoryAResponse.Content.ReadFromJsonAsync<ApiResponse<CategoryDto>>())!.Data!;
+        var categoryBResponse = await client.PostAsJsonAsync("/api/expense-categories", new CreateCategoryRequest(UniqueName("CategoryB"), null));
+        var categoryB = (await categoryBResponse.Content.ReadFromJsonAsync<ApiResponse<CategoryDto>>())!.Data!;
+
+        var subResponse = await client.PostAsJsonAsync($"/api/expense-categories/{categoryA.Id}/subcategories", new CreateSubCategoryRequest("Groceries"));
+        var sub = (await subResponse.Content.ReadFromJsonAsync<ApiResponse<SubCategoryDto>>())!.Data!;
+        await client.PostAsJsonAsync($"/api/expense-categories/{categoryB.Id}/subcategories", new CreateSubCategoryRequest("Groceries"));
+
+        var moveResponse = await client.PutAsJsonAsync(
+            $"/api/expense-categories/subcategories/{sub.Id}",
+            new UpdateSubCategoryRequest("Groceries", categoryB.Id, false));
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, moveResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateSubCategory_MoveToAnotherUsersCategory_ReturnsUnprocessableEntity()
+    {
+        var (clientB, _) = await TestAuthHelper.RegisterAndLoginAsync(factory);
+        var categoryBResponse = await clientB.PostAsJsonAsync("/api/expense-categories", new CreateCategoryRequest(UniqueName("PrivateB"), null));
+        var categoryB = (await categoryBResponse.Content.ReadFromJsonAsync<ApiResponse<CategoryDto>>())!.Data!;
+
+        var (clientA, _) = await TestAuthHelper.RegisterAndLoginAsync(factory);
+        var categoryAResponse = await clientA.PostAsJsonAsync("/api/expense-categories", new CreateCategoryRequest(UniqueName("CategoryA"), null));
+        var categoryA = (await categoryAResponse.Content.ReadFromJsonAsync<ApiResponse<CategoryDto>>())!.Data!;
+        var subResponse = await clientA.PostAsJsonAsync($"/api/expense-categories/{categoryA.Id}/subcategories", new CreateSubCategoryRequest("Mine"));
+        var sub = (await subResponse.Content.ReadFromJsonAsync<ApiResponse<SubCategoryDto>>())!.Data!;
+
+        var moveResponse = await clientA.PutAsJsonAsync(
+            $"/api/expense-categories/subcategories/{sub.Id}",
+            new UpdateSubCategoryRequest("Mine", categoryB.Id, false));
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, moveResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task CreateSubCategory_DuplicateNameWithinCategory_ReturnsUnprocessableEntity()
     {
         var (client, _) = await TestAuthHelper.RegisterAndLoginAsync(factory);

@@ -18,6 +18,7 @@ interface CreateSubCategoryPayload {
 
 interface UpdateSubCategoryPayload {
   name: string
+  categoryId: string
   isArchived: boolean
 }
 

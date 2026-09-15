@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
+import { Combobox } from '@/components/common/Combobox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { IconPicker } from '@/components/common/IconPicker'
@@ -16,6 +17,9 @@ interface CategoryNameDialogProps {
   initialName?: string
   initialIcon?: string | null
   showIcon?: boolean
+  initialCategoryId?: string
+  showCategorySelect?: boolean
+  categoryOptions?: { value: string; label: string }[]
   onSubmit: (values: CategoryNameFormValues) => Promise<void>
 }
 
@@ -26,18 +30,21 @@ export function CategoryNameDialog({
   initialName,
   initialIcon,
   showIcon,
+  initialCategoryId,
+  showCategorySelect,
+  categoryOptions,
   onSubmit,
 }: CategoryNameDialogProps) {
   const form = useForm<CategoryNameFormValues>({
     resolver: zodResolver(categoryNameSchema),
-    defaultValues: { name: initialName ?? '', icon: initialIcon ?? null },
+    defaultValues: { name: initialName ?? '', icon: initialIcon ?? null, categoryId: initialCategoryId ?? '' },
   })
 
   useEffect(() => {
     if (open) {
-      form.reset({ name: initialName ?? '', icon: initialIcon ?? null })
+      form.reset({ name: initialName ?? '', icon: initialIcon ?? null, categoryId: initialCategoryId ?? '' })
     }
-  }, [open, initialName, initialIcon, form])
+  }, [open, initialName, initialIcon, initialCategoryId, form])
 
   async function handleSubmit(values: CategoryNameFormValues) {
     await onSubmit(values)
@@ -93,6 +100,27 @@ export function CategoryNameDialog({
                 )}
               />
             )}
+
+            {showCategorySelect && (
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Combobox
+                      options={categoryOptions ?? []}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select category"
+                      searchPlaceholder="Search categories…"
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}

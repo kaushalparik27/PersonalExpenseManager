@@ -5,18 +5,31 @@ namespace PersonalExpenseManager.Infrastructure.Persistence.Seeding;
 
 public class DefaultCategorySeeder(ApplicationDbContext db) : IDefaultCategorySeeder
 {
-    private static readonly string[] DefaultExpenseCategoryNames =
+    // Icon values must match a key in the frontend's CATEGORY_ICON_ENTRIES
+    // (client/src/lib/categoryIcons.ts) — kept in sync manually since the icon
+    // registry lives client-side and the backend just stores an opaque string.
+    private static readonly (string Name, string Icon)[] DefaultExpenseCategories =
     [
-        "Food", "Transportation", "Utilities", "Home", "Healthcare",
-        "Entertainment", "Shopping", "Education", "Insurance", "Investment", "Other",
+        ("Food", "Utensils"),
+        ("Transportation", "Car"),
+        ("Utilities", "Lightbulb"),
+        ("Home", "Home"),
+        ("Healthcare", "HeartPulse"),
+        ("Entertainment", "Clapperboard"),
+        ("Shopping", "ShoppingBag"),
+        ("Education", "GraduationCap"),
+        ("Insurance", "Shield"),
+        ("Investment", "TrendingUp"),
+        ("Other", "Tag"),
     ];
 
     public async Task SeedDefaultExpenseCategoriesAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var categories = DefaultExpenseCategoryNames.Select((name, index) => new ExpenseCategory
+        var categories = DefaultExpenseCategories.Select((c, index) => new ExpenseCategory
         {
             UserId = userId,
-            Name = name,
+            Name = c.Name,
+            Icon = c.Icon,
             DisplayOrder = index,
         });
 

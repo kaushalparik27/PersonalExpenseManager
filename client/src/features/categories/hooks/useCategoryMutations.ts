@@ -36,7 +36,7 @@ export function useCategoryMutations(kind: CategoryKind) {
   })
 
   const updateSubCategory = useMutation({
-    mutationFn: ({ id, ...payload }: { id: string; name: string; isArchived: boolean }) =>
+    mutationFn: ({ id, ...payload }: { id: string; name: string; categoryId: string; isArchived: boolean }) =>
       api.updateSubCategory(id, payload),
     onSuccess: invalidate,
   })
