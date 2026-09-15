@@ -5,7 +5,10 @@ import type { AccountFormValues, UpdateAccountPayload } from '@/features/account
 
 function useInvalidateAccounts() {
   const queryClient = useQueryClient()
-  return () => queryClient.invalidateQueries({ queryKey: accountsQueryKey })
+  return () => {
+    queryClient.invalidateQueries({ queryKey: accountsQueryKey })
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+  }
 }
 
 export function useCreateAccount() {

@@ -3,13 +3,14 @@ import { transactionsApi } from '@/features/transactions/api/transactionsApi'
 import type { UpdateTransactionPayload } from '@/features/transactions/types'
 import { accountsQueryKey } from '@/features/accounts/hooks/useAccounts'
 
-// Any transaction mutation changes account balances too, so both caches need
-// invalidating — not just the transaction list.
+// Any transaction mutation changes account balances and dashboard totals too,
+// so all three caches need invalidating — not just the transaction list.
 function useInvalidateAfterMutation() {
   const queryClient = useQueryClient()
   return () => {
     queryClient.invalidateQueries({ queryKey: ['transactions'] })
     queryClient.invalidateQueries({ queryKey: accountsQueryKey })
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] })
   }
 }
 
