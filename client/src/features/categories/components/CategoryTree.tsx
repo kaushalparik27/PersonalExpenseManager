@@ -117,13 +117,18 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
         })
         toast.success('Category updated.')
       } else if (dialog.type === 'add-subcategory') {
-        await mutations.createSubCategory.mutateAsync({ categoryId: dialog.category.id, name: values.name })
+        await mutations.createSubCategory.mutateAsync({
+          categoryId: dialog.category.id,
+          name: values.name,
+          icon: values.icon,
+        })
         toast.success('Subcategory added.')
       } else if (dialog.type === 'edit-subcategory') {
         await mutations.updateSubCategory.mutateAsync({
           id: dialog.subCategory.id,
           name: values.name,
           categoryId: values.categoryId,
+          icon: values.icon,
           isArchived: dialog.subCategory.isArchived,
         })
         const moved = values.categoryId !== dialog.category.id
@@ -219,6 +224,13 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
                   .sort((a, b) => a.displayOrder - b.displayOrder)
                   .map((subCategory, subIndex, subArray) => (
                     <div key={subCategory.id} className="flex items-center gap-1 py-2 pr-3 pl-11">
+                      {(() => {
+                        const SubCategoryIcon = resolveCategoryIcon(subCategory.icon)
+                        return SubCategoryIcon ? (
+                          <SubCategoryIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                        ) : null
+                      })()}
+
                       <span
                         className={cn(
                           'flex-1 text-sm',
@@ -306,8 +318,14 @@ export function CategoryTree({ kind, categories }: CategoryTreeProps) {
               ? dialog.subCategory.name
               : ''
         }
-        initialIcon={dialog?.type === 'edit-category' ? dialog.category.icon : null}
-        showIcon={dialog?.type === 'edit-category'}
+        initialIcon={
+          dialog?.type === 'edit-category'
+            ? dialog.category.icon
+            : dialog?.type === 'edit-subcategory'
+              ? dialog.subCategory.icon
+              : null
+        }
+        showIcon
         initialCategoryId={dialog?.type === 'edit-subcategory' ? dialog.category.id : undefined}
         showCategorySelect={dialog?.type === 'edit-subcategory'}
         categoryOptions={sorted.filter((c) => !c.isArchived).map((c) => ({ value: c.id, label: c.name }))}

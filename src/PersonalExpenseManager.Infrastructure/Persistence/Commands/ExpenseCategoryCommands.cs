@@ -128,6 +128,7 @@ public class ExpenseCategoryCommands(ApplicationDbContext db) : IExpenseCategory
             UserId = userId,
             ExpenseCategoryId = categoryId,
             Name = request.Name,
+            Icon = request.Icon,
             DisplayOrder = nextDisplayOrder,
         };
 
@@ -175,6 +176,7 @@ public class ExpenseCategoryCommands(ApplicationDbContext db) : IExpenseCategory
         }
 
         subCategory.Name = request.Name;
+        subCategory.Icon = request.Icon;
         subCategory.IsArchived = request.IsArchived;
         subCategory.UpdatedAt = DateTime.UtcNow;
 
@@ -220,5 +222,5 @@ public class ExpenseCategoryCommands(ApplicationDbContext db) : IExpenseCategory
         return true;
     }
 
-    private static SubCategoryDto ToDto(ExpenseSubCategory s) => new(s.Id, s.Name, s.DisplayOrder, s.IsArchived);
+    private static SubCategoryDto ToDto(ExpenseSubCategory s) => new(s.Id, s.Name, s.Icon, s.DisplayOrder, s.IsArchived);
 }

@@ -30,14 +30,22 @@ export function useCategoryMutations(kind: CategoryKind) {
   })
 
   const createSubCategory = useMutation({
-    mutationFn: ({ categoryId, name }: { categoryId: string; name: string }) =>
-      api.createSubCategory(categoryId, { name }),
+    mutationFn: ({ categoryId, name, icon }: { categoryId: string; name: string; icon: string | null }) =>
+      api.createSubCategory(categoryId, { name, icon }),
     onSuccess: invalidate,
   })
 
   const updateSubCategory = useMutation({
-    mutationFn: ({ id, ...payload }: { id: string; name: string; categoryId: string; isArchived: boolean }) =>
-      api.updateSubCategory(id, payload),
+    mutationFn: ({
+      id,
+      ...payload
+    }: {
+      id: string
+      name: string
+      categoryId: string
+      icon: string | null
+      isArchived: boolean
+    }) => api.updateSubCategory(id, payload),
     onSuccess: invalidate,
   })
 

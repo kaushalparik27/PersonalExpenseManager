@@ -14,11 +14,13 @@ interface UpdateCategoryPayload {
 
 interface CreateSubCategoryPayload {
   name: string
+  icon: string | null
 }
 
 interface UpdateSubCategoryPayload {
   name: string
   categoryId: string
+  icon: string | null
   isArchived: boolean
 }
 

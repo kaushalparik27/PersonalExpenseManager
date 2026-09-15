@@ -9,5 +9,6 @@ public class UpdateSubCategoryRequestValidator : AbstractValidator<UpdateSubCate
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
         RuleFor(x => x.CategoryId).NotEmpty();
+        RuleFor(x => x.Icon).MaximumLength(50);
     }
 }

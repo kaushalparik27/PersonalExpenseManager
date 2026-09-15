@@ -25,5 +25,5 @@ public class IncomeCategoryQueries(ApplicationDbContext db) : IIncomeCategoryQue
         c.Icon,
         c.DisplayOrder,
         c.IsArchived,
-        c.SubCategories.Select(s => new SubCategoryDto(s.Id, s.Name, s.DisplayOrder, s.IsArchived)).ToList());
+        c.SubCategories.Select(s => new SubCategoryDto(s.Id, s.Name, s.Icon, s.DisplayOrder, s.IsArchived)).ToList());
 }

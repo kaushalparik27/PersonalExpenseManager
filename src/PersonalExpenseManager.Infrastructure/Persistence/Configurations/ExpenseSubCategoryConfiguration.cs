@@ -19,6 +19,7 @@ public class ExpenseSubCategoryConfiguration : IEntityTypeConfiguration<ExpenseS
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(s => s.Name).IsRequired().HasMaxLength(100);
+        builder.Property(s => s.Icon).HasMaxLength(50);
 
         builder.HasIndex(s => s.UserId);
         builder.HasIndex(s => s.ExpenseCategoryId);

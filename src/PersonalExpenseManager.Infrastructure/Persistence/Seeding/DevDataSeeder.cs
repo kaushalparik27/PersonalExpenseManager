@@ -84,17 +84,17 @@ public static class DevDataSeeder
         var transportation = expenseCategories.Single(c => c.Name == "Transportation");
         var utilities = expenseCategories.Single(c => c.Name == "Utilities");
 
-        ExpenseSubCategory Sub(ExpenseCategory category, string name, int order) =>
-            new() { UserId = user.Id, ExpenseCategoryId = category.Id, Name = name, DisplayOrder = order };
+        ExpenseSubCategory Sub(ExpenseCategory category, string name, string icon, int order) =>
+            new() { UserId = user.Id, ExpenseCategoryId = category.Id, Name = name, Icon = icon, DisplayOrder = order };
 
-        var groceries = Sub(food, "Groceries", 0);
-        var restaurants = Sub(food, "Restaurants", 1);
-        var delivery = Sub(food, "Delivery", 2);
-        var fuel = Sub(transportation, "Fuel", 0);
-        var taxi = Sub(transportation, "Taxi", 1);
-        var electricity = Sub(utilities, "Electricity", 0);
-        var internet = Sub(utilities, "Internet", 1);
-        var mobile = Sub(utilities, "Mobile", 2);
+        var groceries = Sub(food, "Groceries", "ShoppingCart", 0);
+        var restaurants = Sub(food, "Restaurants", "UtensilsCrossed", 1);
+        var delivery = Sub(food, "Delivery", "Truck", 2);
+        var fuel = Sub(transportation, "Fuel", "Fuel", 0);
+        var taxi = Sub(transportation, "Taxi", "Car", 1);
+        var electricity = Sub(utilities, "Electricity", "Lightbulb", 0);
+        var internet = Sub(utilities, "Internet", "Wifi", 1);
+        var mobile = Sub(utilities, "Mobile", "Smartphone", 2);
         db.ExpenseSubCategories.AddRange(groceries, restaurants, delivery, fuel, taxi, electricity, internet, mobile);
 
         var incomeCategories = IncomeCategories

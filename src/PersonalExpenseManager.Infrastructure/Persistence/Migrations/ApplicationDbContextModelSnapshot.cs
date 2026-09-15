@@ -288,6 +288,10 @@ namespace PersonalExpenseManager.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("ExpenseCategoryId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Icon")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<bool>("IsArchived")
                         .HasColumnType("boolean");
 
@@ -367,6 +371,10 @@ namespace PersonalExpenseManager.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<Guid>("IncomeCategoryId")
                         .HasColumnType("uuid");
