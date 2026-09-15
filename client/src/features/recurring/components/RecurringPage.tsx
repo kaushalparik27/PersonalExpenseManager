@@ -102,7 +102,7 @@ export function RecurringPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Recurring Transactions</h1>
           <p className="text-sm text-muted-foreground">Salary, rent, subscriptions, and other transactions that repeat automatically.</p>

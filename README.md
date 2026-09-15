@@ -2,7 +2,7 @@
 
 A premium personal finance web application: accounts, income/expense tracking, transfers, categories, recurring transactions, dashboards, and reports.
 
-**Status:** Phases 1–9 (Foundation, Authentication, Database, Accounts, Categories, Transactions, Dashboard, Reports, Recurring Transactions) complete. Security/UX review and production-readiness testing are not yet done — see [Development Phases](#development-phases).
+**Status:** Phases 1–10 (Foundation, Authentication, Database, Accounts, Categories, Transactions, Dashboard, Reports, Recurring Transactions, Security & UX Review) complete. Final production-readiness testing is not yet done — see [Development Phases](#development-phases).
 
 ## Stack
 
@@ -128,7 +128,7 @@ Authentication is mandatory and precedes financial functionality:
 7. **Dashboard** *(done)* — summary cards, Income vs Expense and category charts, recent transactions, insights.
 8. **Reports** *(done)* — income/expense/cash-flow/category/account analysis, date-range presets, category drilldown to underlying transactions.
 9. **Recurring Transactions** *(done)* — expense/income/transfer templates (Daily/Weekly/Monthly/Quarterly/Yearly), an in-process engine that generates due transactions and catches up missed occurrences, pause/resume/edit/delete.
-10. **Security & UX Review.**
+10. **Security & UX Review** *(done)* — rate limiting on the auth surface, centralized exception handling, HSTS, a light/dark/system theme toggle, mobile header-layout fixes, cross-user data-isolation audit.
 11. **Testing & Production Readiness.**
 
 Each user-owned entity is scoped to the authenticated user; the API is the sole authorization boundary (frontend route guards are UX-only).

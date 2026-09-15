@@ -48,6 +48,16 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
+        // CSRF: no anti-forgery token is issued, by design. The auth cookie is
+        // HttpOnly (JS can't read/exfiltrate it) and SameSite=Strict, which stops
+        // the browser from attaching it to any cross-site request — including the
+        // classic CSRF pattern of a form/fetch on an attacker-controlled page
+        // targeting this API. That covers every state-changing endpoint here since
+        // all of them require the cookie. Same-origin requests from the SPA itself
+        // (or another localhost port in dev, which shares the same registrable
+        // domain) still carry it normally. Don't remove SameSite=Strict without
+        // adding an explicit anti-forgery token scheme first — HTTPS alone does not
+        // stand in for this.
         services.ConfigureApplicationCookie(options =>
         {
             options.Cookie.HttpOnly = true;
