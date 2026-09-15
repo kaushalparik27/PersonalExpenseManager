@@ -11,6 +11,7 @@ export const accountSchema = z.object({
     .regex(/^[A-Z]{3}$/, 'Use a 3-letter ISO code, e.g. INR.'),
   icon: z.string().max(50),
   displayOrder: z.number().int().min(0),
+  isActive: z.boolean(),
 })
 
 export type AccountFormSchema = z.infer<typeof accountSchema>

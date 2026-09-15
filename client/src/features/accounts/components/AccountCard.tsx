@@ -1,4 +1,4 @@
-import { MoreVertical, Pencil, Archive, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, MoreVertical, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { accountTypeMeta } from '@/features/accounts/accountTypeMeta'
 import { AccountFormDialog } from '@/features/accounts/components/AccountFormDialog'
-import { useArchiveAccount, useDeleteAccount } from '@/features/accounts/hooks/useAccountMutations'
+import { useArchiveAccount, useDeleteAccount, useUnhideAccount } from '@/features/accounts/hooks/useAccountMutations'
 import type { Account } from '@/features/accounts/types'
 import { ApiRequestError } from '@/lib/api/client'
 import { formatCurrency } from '@/lib/utils/currency'
@@ -36,16 +36,26 @@ export function AccountCard({ account }: AccountCardProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const archiveAccount = useArchiveAccount()
+  const unhideAccount = useUnhideAccount()
   const deleteAccount = useDeleteAccount()
 
   const { label, icon: Icon } = accountTypeMeta[account.accountType]
 
-  async function handleArchive() {
+  async function handleHide() {
     try {
       await archiveAccount.mutateAsync(account.id)
-      toast.success(`${account.name} archived.`)
+      toast.success(`${account.name} hidden. It's excluded from balances, reports, and charts.`)
     } catch {
-      toast.error('Unable to archive this account.')
+      toast.error('Unable to hide this account.')
+    }
+  }
+
+  async function handleUnhide() {
+    try {
+      await unhideAccount.mutateAsync(account.id)
+      toast.success(`${account.name} is visible again.`)
+    } catch {
+      toast.error('Unable to unhide this account.')
     }
   }
 
@@ -77,7 +87,7 @@ export function AccountCard({ account }: AccountCardProps) {
               <p className="truncate text-sm font-semibold text-foreground">{account.name}</p>
               {!account.isActive && (
                 <Badge variant="secondary" className="text-xs">
-                  Archived
+                  Hidden
                 </Badge>
               )}
             </div>
@@ -103,10 +113,15 @@ export function AccountCard({ account }: AccountCardProps) {
                 <Pencil className="size-4" />
                 Edit
               </DropdownMenuItem>
-              {account.isActive && (
-                <DropdownMenuItem onSelect={handleArchive}>
-                  <Archive className="size-4" />
-                  Archive
+              {account.isActive ? (
+                <DropdownMenuItem onSelect={handleHide}>
+                  <EyeOff className="size-4" />
+                  Hide
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onSelect={handleUnhide}>
+                  <Eye className="size-4" />
+                  Unhide
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
@@ -125,7 +140,7 @@ export function AccountCard({ account }: AccountCardProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {account.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This can't be undone. Accounts with existing transactions can't be deleted — archive them
+              This can't be undone. Accounts with existing transactions can't be deleted — hide them
               instead.
             </AlertDialogDescription>
           </AlertDialogHeader>

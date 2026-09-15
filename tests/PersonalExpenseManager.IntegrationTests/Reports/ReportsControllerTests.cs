@@ -102,6 +102,26 @@ public class ReportsControllerTests(CustomWebApplicationFactory factory) : IClas
     }
 
     [Fact]
+    public async Task GetExpenseReport_HiddenAccountTransactions_Excluded()
+    {
+        var (client, userId) = await TestAuthHelper.RegisterAndLoginAsync(factory);
+        var visibleId = await CreateAccountAsync(client, "Visible");
+        var hiddenId = await CreateAccountAsync(client, "Hidden");
+        var foodId = await GetFoodExpenseCategoryIdAsync(client);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        await SeedTransactionAsync(userId, visibleId, TransactionType.Expense, 300m, today, foodId);
+        await SeedTransactionAsync(userId, hiddenId, TransactionType.Expense, 9_000m, today, foodId);
+        await client.PatchAsync($"/api/accounts/{hiddenId}/archive", null);
+
+        var response = await client.GetAsync("/api/reports/expenses");
+        var body = await response.Content.ReadFromJsonAsync<ApiResponse<IncomeExpenseReportDto>>();
+
+        Assert.Equal(300m, body!.Data!.TotalAmount);
+        Assert.Equal(300m, body.Data.Categories[0].Amount);
+    }
+
+    [Fact]
     public async Task GetCashFlow_ComputesNetCashFlowAndSavingsRate()
     {
         var (client, userId) = await TestAuthHelper.RegisterAndLoginAsync(factory);
@@ -169,6 +189,23 @@ public class ReportsControllerTests(CustomWebApplicationFactory factory) : IClas
         Assert.Equal(-700m, source.PeriodNetChange);
         Assert.Equal(200m, dest.PeriodTransferIn);
         Assert.Equal(200m, dest.PeriodNetChange);
+    }
+
+    [Fact]
+    public async Task GetAccountSummary_HiddenAccount_NotIncludedAsRow()
+    {
+        var (client, userId) = await TestAuthHelper.RegisterAndLoginAsync(factory);
+        var hiddenId = await CreateAccountAsync(client, "Hidden");
+        var foodId = await GetFoodExpenseCategoryIdAsync(client);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        await SeedTransactionAsync(userId, hiddenId, TransactionType.Expense, 500m, today, foodId);
+        await client.PatchAsync($"/api/accounts/{hiddenId}/archive", null);
+
+        var response = await client.GetAsync("/api/reports/account-summary");
+        var body = await response.Content.ReadFromJsonAsync<ApiResponse<AccountSummaryReportDto>>();
+
+        Assert.DoesNotContain(body!.Data!.Accounts, a => a.AccountName == "Hidden");
     }
 
     [Fact]

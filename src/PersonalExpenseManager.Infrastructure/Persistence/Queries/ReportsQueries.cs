@@ -11,23 +11,26 @@ public class ReportsQueries(ApplicationDbContext db, IAccountQueries accountQuer
 {
     public async Task<IncomeExpenseReportDto> GetIncomeReportAsync(Guid userId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken = default)
     {
-        var series = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, fromDate, toDate, cancellationToken);
-        var categories = await GetCategoryAmountsAsync(userId, TransactionType.Income, fromDate, toDate, cancellationToken);
+        var activeAccountIds = await GetActiveAccountIdsAsync(userId, cancellationToken);
+        var series = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, fromDate, toDate, activeAccountIds, cancellationToken);
+        var categories = await GetCategoryAmountsAsync(userId, TransactionType.Income, fromDate, toDate, activeAccountIds, cancellationToken);
 
         return new IncomeExpenseReportDto(series.Sum(s => s.Income), series, categories);
     }
 
     public async Task<IncomeExpenseReportDto> GetExpenseReportAsync(Guid userId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken = default)
     {
-        var series = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, fromDate, toDate, cancellationToken);
-        var categories = await GetCategoryAmountsAsync(userId, TransactionType.Expense, fromDate, toDate, cancellationToken);
+        var activeAccountIds = await GetActiveAccountIdsAsync(userId, cancellationToken);
+        var series = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, fromDate, toDate, activeAccountIds, cancellationToken);
+        var categories = await GetCategoryAmountsAsync(userId, TransactionType.Expense, fromDate, toDate, activeAccountIds, cancellationToken);
 
         return new IncomeExpenseReportDto(series.Sum(s => s.Expense), series, categories);
     }
 
     public async Task<CashFlowReportDto> GetCashFlowReportAsync(Guid userId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken = default)
     {
-        var series = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, fromDate, toDate, cancellationToken);
+        var activeAccountIds = await GetActiveAccountIdsAsync(userId, cancellationToken);
+        var series = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, fromDate, toDate, activeAccountIds, cancellationToken);
         var totalIncome = series.Sum(s => s.Income);
         var totalExpense = series.Sum(s => s.Expense);
 
@@ -40,15 +43,18 @@ public class ReportsQueries(ApplicationDbContext db, IAccountQueries accountQuer
 
     public async Task<CategorySummaryReportDto> GetCategorySummaryAsync(Guid userId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken = default)
     {
-        var expenseCategories = await BuildExpenseCategorySummaryAsync(userId, fromDate, toDate, cancellationToken);
-        var incomeCategories = await BuildIncomeCategorySummaryAsync(userId, fromDate, toDate, cancellationToken);
+        var activeAccountIds = await GetActiveAccountIdsAsync(userId, cancellationToken);
+        var expenseCategories = await BuildExpenseCategorySummaryAsync(userId, fromDate, toDate, activeAccountIds, cancellationToken);
+        var incomeCategories = await BuildIncomeCategorySummaryAsync(userId, fromDate, toDate, activeAccountIds, cancellationToken);
 
         return new CategorySummaryReportDto(expenseCategories, incomeCategories);
     }
 
     public async Task<AccountSummaryReportDto> GetAccountSummaryAsync(Guid userId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken = default)
     {
-        var accounts = await accountQueries.GetForUserAsync(userId, cancellationToken);
+        // Hidden accounts are simply excluded from this report entirely — no row,
+        // no contribution to any other account's figures.
+        var accounts = (await accountQueries.GetForUserAsync(userId, cancellationToken)).Where(a => a.IsActive).ToList();
 
         var byAccountAndType = await db.Transactions
             .Where(t => t.UserId == userId && t.TransactionDate >= fromDate && t.TransactionDate <= toDate)
@@ -83,18 +89,25 @@ public class ReportsQueries(ApplicationDbContext db, IAccountQueries accountQuer
 
     public async Task<MonthlyTrendReportDto> GetMonthlyTrendAsync(Guid userId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken = default)
     {
-        var series = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, fromDate, toDate, cancellationToken);
+        var activeAccountIds = await GetActiveAccountIdsAsync(userId, cancellationToken);
+        var series = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, fromDate, toDate, activeAccountIds, cancellationToken);
         return new MonthlyTrendReportDto(series);
     }
 
+    // Hidden (IsActive=false) accounts' transactions are excluded from every report
+    // here — a hidden account has no effect on any total, chart, or breakdown.
+    private async Task<HashSet<Guid>> GetActiveAccountIdsAsync(Guid userId, CancellationToken cancellationToken) =>
+        (await db.Accounts.Where(a => a.UserId == userId && a.IsActive).Select(a => a.Id).ToListAsync(cancellationToken)).ToHashSet();
+
     private async Task<IReadOnlyList<CategoryAmountDto>> GetCategoryAmountsAsync(
-        Guid userId, TransactionType type, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken)
+        Guid userId, TransactionType type, DateOnly fromDate, DateOnly toDate, IReadOnlyCollection<Guid> activeAccountIds, CancellationToken cancellationToken)
     {
         if (type == TransactionType.Expense)
         {
             var grouped = await db.Transactions
                 .Where(t => t.UserId == userId && t.TransactionType == TransactionType.Expense
-                    && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.ExpenseCategoryId != null)
+                    && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.ExpenseCategoryId != null
+                    && activeAccountIds.Contains(t.AccountId))
                 .GroupBy(t => t.ExpenseCategoryId)
                 .Select(g => new { CategoryId = g.Key!.Value, Total = g.Sum(t => t.Amount) })
                 .OrderByDescending(x => x.Total)
@@ -116,7 +129,8 @@ public class ReportsQueries(ApplicationDbContext db, IAccountQueries accountQuer
         {
             var grouped = await db.Transactions
                 .Where(t => t.UserId == userId && t.TransactionType == TransactionType.Income
-                    && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.IncomeCategoryId != null)
+                    && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.IncomeCategoryId != null
+                    && activeAccountIds.Contains(t.AccountId))
                 .GroupBy(t => t.IncomeCategoryId)
                 .Select(g => new { CategoryId = g.Key!.Value, Total = g.Sum(t => t.Amount) })
                 .OrderByDescending(x => x.Total)
@@ -137,11 +151,12 @@ public class ReportsQueries(ApplicationDbContext db, IAccountQueries accountQuer
     }
 
     private async Task<IReadOnlyList<CategorySummaryCategoryDto>> BuildExpenseCategorySummaryAsync(
-        Guid userId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken)
+        Guid userId, DateOnly fromDate, DateOnly toDate, IReadOnlyCollection<Guid> activeAccountIds, CancellationToken cancellationToken)
     {
         var categoryTotals = await db.Transactions
             .Where(t => t.UserId == userId && t.TransactionType == TransactionType.Expense
-                && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.ExpenseCategoryId != null)
+                && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.ExpenseCategoryId != null
+                && activeAccountIds.Contains(t.AccountId))
             .GroupBy(t => t.ExpenseCategoryId)
             .Select(g => new { CategoryId = g.Key!.Value, Total = g.Sum(t => t.Amount) })
             .ToListAsync(cancellationToken);
@@ -153,7 +168,8 @@ public class ReportsQueries(ApplicationDbContext db, IAccountQueries accountQuer
 
         var subCategoryTotals = await db.Transactions
             .Where(t => t.UserId == userId && t.TransactionType == TransactionType.Expense
-                && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.ExpenseSubCategoryId != null)
+                && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.ExpenseSubCategoryId != null
+                && activeAccountIds.Contains(t.AccountId))
             .GroupBy(t => t.ExpenseSubCategoryId)
             .Select(g => new { SubCategoryId = g.Key!.Value, Total = g.Sum(t => t.Amount) })
             .ToDictionaryAsync(g => g.SubCategoryId, g => g.Total, cancellationToken);
@@ -181,11 +197,12 @@ public class ReportsQueries(ApplicationDbContext db, IAccountQueries accountQuer
     }
 
     private async Task<IReadOnlyList<CategorySummaryCategoryDto>> BuildIncomeCategorySummaryAsync(
-        Guid userId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken)
+        Guid userId, DateOnly fromDate, DateOnly toDate, IReadOnlyCollection<Guid> activeAccountIds, CancellationToken cancellationToken)
     {
         var categoryTotals = await db.Transactions
             .Where(t => t.UserId == userId && t.TransactionType == TransactionType.Income
-                && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.IncomeCategoryId != null)
+                && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.IncomeCategoryId != null
+                && activeAccountIds.Contains(t.AccountId))
             .GroupBy(t => t.IncomeCategoryId)
             .Select(g => new { CategoryId = g.Key!.Value, Total = g.Sum(t => t.Amount) })
             .ToListAsync(cancellationToken);
@@ -197,7 +214,8 @@ public class ReportsQueries(ApplicationDbContext db, IAccountQueries accountQuer
 
         var subCategoryTotals = await db.Transactions
             .Where(t => t.UserId == userId && t.TransactionType == TransactionType.Income
-                && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.IncomeSubCategoryId != null)
+                && t.TransactionDate >= fromDate && t.TransactionDate <= toDate && t.IncomeSubCategoryId != null
+                && activeAccountIds.Contains(t.AccountId))
             .GroupBy(t => t.IncomeSubCategoryId)
             .Select(g => new { SubCategoryId = g.Key!.Value, Total = g.Sum(t => t.Amount) })
             .ToDictionaryAsync(g => g.SubCategoryId, g => g.Total, cancellationToken);

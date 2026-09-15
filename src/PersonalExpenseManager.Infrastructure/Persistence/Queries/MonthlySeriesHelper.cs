@@ -7,14 +7,17 @@ namespace PersonalExpenseManager.Infrastructure.Persistence.Queries;
 // Shared by DashboardQueries (fixed trailing window) and ReportsQueries
 // (arbitrary user-selected range) so the month-bucketing logic — including
 // filling in zero-value months with no transactions — exists in one place.
+// activeAccountIds excludes hidden (IsActive=false) accounts' transactions from
+// every caller, so a hidden account never shows up in any chart or aggregate.
 internal static class MonthlySeriesHelper
 {
     public static async Task<IReadOnlyList<MonthlyAmountDto>> GetMonthlyIncomeExpenseSeriesAsync(
-        ApplicationDbContext db, Guid userId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken)
+        ApplicationDbContext db, Guid userId, DateOnly fromDate, DateOnly toDate, IReadOnlyCollection<Guid> activeAccountIds, CancellationToken cancellationToken)
     {
         var rows = await db.Transactions
             .Where(t => t.UserId == userId && t.TransactionDate >= fromDate && t.TransactionDate <= toDate
-                && (t.TransactionType == TransactionType.Income || t.TransactionType == TransactionType.Expense))
+                && (t.TransactionType == TransactionType.Income || t.TransactionType == TransactionType.Expense)
+                && activeAccountIds.Contains(t.AccountId))
             .GroupBy(t => new { t.TransactionDate.Year, t.TransactionDate.Month, t.TransactionType })
             .Select(g => new { g.Key.Year, g.Key.Month, g.Key.TransactionType, Total = g.Sum(t => t.Amount) })
             .ToListAsync(cancellationToken);

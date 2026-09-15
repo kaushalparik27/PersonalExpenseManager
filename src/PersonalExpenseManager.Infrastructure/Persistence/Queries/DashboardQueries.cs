@@ -27,6 +27,7 @@ public class DashboardQueries(
 
         var accounts = await accountQueries.GetForUserAsync(userId, cancellationToken);
         var activeAccounts = accounts.Where(a => a.IsActive).ToList();
+        var activeAccountIds = activeAccounts.Select(a => a.Id).ToHashSet();
 
         var totalBalance = activeAccounts.Sum(a => a.CurrentBalance);
         var balanceByType = activeAccounts
@@ -35,8 +36,8 @@ public class DashboardQueries(
             .OrderByDescending(x => x.Balance)
             .ToList();
 
-        var (thisMonthIncome, thisMonthExpense) = await GetIncomeExpenseTotalsAsync(userId, monthStart, monthEnd, cancellationToken);
-        var (prevMonthIncome, prevMonthExpense) = await GetIncomeExpenseTotalsAsync(userId, prevMonthStart, prevMonthEnd, cancellationToken);
+        var (thisMonthIncome, thisMonthExpense) = await GetIncomeExpenseTotalsAsync(userId, monthStart, monthEnd, activeAccountIds, cancellationToken);
+        var (prevMonthIncome, prevMonthExpense) = await GetIncomeExpenseTotalsAsync(userId, prevMonthStart, prevMonthEnd, activeAccountIds, cancellationToken);
 
         var netCashFlow = thisMonthIncome - thisMonthExpense;
 
@@ -48,9 +49,9 @@ public class DashboardQueries(
             ? Math.Round((thisMonthExpense - prevMonthExpense) / prevMonthExpense * 100, 1)
             : null;
 
-        var topExpenseCategories = await GetTopExpenseCategoriesAsync(userId, monthStart, monthEnd, cancellationToken);
+        var topExpenseCategories = await GetTopExpenseCategoriesAsync(userId, monthStart, monthEnd, activeAccountIds, cancellationToken);
         var trendStart = monthStart.AddMonths(-(TrendMonths - 1));
-        var trend = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, trendStart, monthEnd, cancellationToken);
+        var trend = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, trendStart, monthEnd, activeAccountIds, cancellationToken);
 
         var recentTransactionsPage = await transactionQueries.GetPagedAsync(
             userId,
@@ -75,12 +76,13 @@ public class DashboardQueries(
     }
 
     private async Task<(decimal Income, decimal Expense)> GetIncomeExpenseTotalsAsync(
-        Guid userId, DateOnly from, DateOnly to, CancellationToken cancellationToken)
+        Guid userId, DateOnly from, DateOnly to, IReadOnlyCollection<Guid> activeAccountIds, CancellationToken cancellationToken)
     {
         var totals = await db.Transactions
             .Where(t => t.UserId == userId
                 && t.TransactionDate >= from && t.TransactionDate <= to
-                && (t.TransactionType == TransactionType.Income || t.TransactionType == TransactionType.Expense))
+                && (t.TransactionType == TransactionType.Income || t.TransactionType == TransactionType.Expense)
+                && activeAccountIds.Contains(t.AccountId))
             .GroupBy(t => t.TransactionType)
             .Select(g => new { Type = g.Key, Total = g.Sum(t => t.Amount) })
             .ToListAsync(cancellationToken);
@@ -91,11 +93,12 @@ public class DashboardQueries(
     }
 
     private async Task<IReadOnlyList<CategoryAmountDto>> GetTopExpenseCategoriesAsync(
-        Guid userId, DateOnly from, DateOnly to, CancellationToken cancellationToken)
+        Guid userId, DateOnly from, DateOnly to, IReadOnlyCollection<Guid> activeAccountIds, CancellationToken cancellationToken)
     {
         var grouped = await db.Transactions
             .Where(t => t.UserId == userId && t.TransactionType == TransactionType.Expense
-                && t.TransactionDate >= from && t.TransactionDate <= to && t.ExpenseCategoryId != null)
+                && t.TransactionDate >= from && t.TransactionDate <= to && t.ExpenseCategoryId != null
+                && activeAccountIds.Contains(t.AccountId))
             .GroupBy(t => t.ExpenseCategoryId)
             .Select(g => new { CategoryId = g.Key!.Value, Total = g.Sum(t => t.Amount) })
             .OrderByDescending(x => x.Total)

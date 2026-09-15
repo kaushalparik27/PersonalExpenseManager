@@ -126,6 +126,36 @@ public class AccountsControllerTests(CustomWebApplicationFactory factory) : ICla
     }
 
     [Fact]
+    public async Task Unhide_RestoresIsActiveTrue()
+    {
+        var (client, _) = await TestAuthHelper.RegisterAndLoginAsync(factory);
+        var createResponse = await client.PostAsJsonAsync("/api/accounts", NewAccountRequest());
+        var account = (await createResponse.Content.ReadFromJsonAsync<ApiResponse<AccountDto>>())!.Data!;
+        await client.PatchAsync($"/api/accounts/{account.Id}/archive", null);
+
+        var unhideResponse = await client.PatchAsync($"/api/accounts/{account.Id}/unhide", null);
+        var getResponse = await client.GetAsync($"/api/accounts/{account.Id}");
+        var body = await getResponse.Content.ReadFromJsonAsync<ApiResponse<AccountDto>>();
+
+        Assert.Equal(HttpStatusCode.NoContent, unhideResponse.StatusCode);
+        Assert.True(body!.Data!.IsActive);
+    }
+
+    [Fact]
+    public async Task UserA_CannotUnhideUserBAccount()
+    {
+        var (clientB, _) = await TestAuthHelper.RegisterAndLoginAsync(factory);
+        var createResponse = await clientB.PostAsJsonAsync("/api/accounts", NewAccountRequest());
+        var accountB = (await createResponse.Content.ReadFromJsonAsync<ApiResponse<AccountDto>>())!.Data!;
+        await clientB.PatchAsync($"/api/accounts/{accountB.Id}/archive", null);
+
+        var (clientA, _) = await TestAuthHelper.RegisterAndLoginAsync(factory);
+        var response = await clientA.PatchAsync($"/api/accounts/{accountB.Id}/unhide", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Delete_AccountWithNoTransactions_Succeeds()
     {
         var (client, _) = await TestAuthHelper.RegisterAndLoginAsync(factory);

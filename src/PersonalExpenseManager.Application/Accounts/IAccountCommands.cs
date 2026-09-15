@@ -17,5 +17,7 @@ public interface IAccountCommands
 
     Task<bool> ArchiveAsync(Guid userId, Guid accountId, CancellationToken cancellationToken = default);
 
+    Task<bool> UnhideAsync(Guid userId, Guid accountId, CancellationToken cancellationToken = default);
+
     Task<AccountDeleteResult> DeleteAsync(Guid userId, Guid accountId, CancellationToken cancellationToken = default);
 }

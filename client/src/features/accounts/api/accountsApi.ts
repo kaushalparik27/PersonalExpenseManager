@@ -13,5 +13,7 @@ export const accountsApi = {
 
   archive: (id: string) => apiClient.patch<void>(`/api/accounts/${id}/archive`),
 
+  unhide: (id: string) => apiClient.patch<void>(`/api/accounts/${id}/unhide`),
+
   remove: (id: string) => apiClient.delete<void>(`/api/accounts/${id}`),
 }

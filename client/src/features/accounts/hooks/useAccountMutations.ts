@@ -35,6 +35,14 @@ export function useArchiveAccount() {
   })
 }
 
+export function useUnhideAccount() {
+  const invalidate = useInvalidateAccounts()
+  return useMutation({
+    mutationFn: (id: string) => accountsApi.unhide(id),
+    onSuccess: invalidate,
+  })
+}
+
 export function useDeleteAccount() {
   const invalidate = useInvalidateAccounts()
   return useMutation({

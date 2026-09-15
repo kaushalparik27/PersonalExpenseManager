@@ -67,6 +67,21 @@ public class AccountCommands(ApplicationDbContext db, IAccountBalanceCalculator 
         return true;
     }
 
+    public async Task<bool> UnhideAsync(Guid userId, Guid accountId, CancellationToken cancellationToken = default)
+    {
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == accountId && a.UserId == userId, cancellationToken);
+        if (account is null)
+        {
+            return false;
+        }
+
+        account.IsActive = true;
+        account.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+
+        return true;
+    }
+
     public async Task<AccountDeleteResult> DeleteAsync(Guid userId, Guid accountId, CancellationToken cancellationToken = default)
     {
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == accountId && a.UserId == userId, cancellationToken);

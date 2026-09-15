@@ -68,6 +68,20 @@ public class AccountsController(IAccountQueries accountQueries, IAccountCommands
         return NoContent();
     }
 
+    [HttpPatch("{id:guid}/unhide")]
+    public async Task<IActionResult> Unhide(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var unhidden = await accountCommands.UnhideAsync(userId, id, cancellationToken);
+
+        if (!unhidden)
+        {
+            return NotFound(ApiResponse<object>.Fail("Account not found."));
+        }
+
+        return NoContent();
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
@@ -78,7 +92,7 @@ public class AccountsController(IAccountQueries accountQueries, IAccountCommands
         {
             AccountDeleteResult.NotFound => NotFound(ApiResponse<object>.Fail("Account not found.")),
             AccountDeleteResult.HasTransactions => Conflict(
-                ApiResponse<object>.Fail("This account has existing transactions. Archive it instead of deleting.")),
+                ApiResponse<object>.Fail("This account has existing transactions. Hide it instead of deleting.")),
             AccountDeleteResult.Deleted => NoContent(),
             _ => throw new InvalidOperationException($"Unhandled {nameof(AccountDeleteResult)} value: {result}"),
         };

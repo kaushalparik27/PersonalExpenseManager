@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { accountTypeOptions } from '@/features/accounts/accountTypeMeta'
 import { useCreateAccount, useUpdateAccount } from '@/features/accounts/hooks/useAccountMutations'
 import type { Account } from '@/features/accounts/types'
@@ -47,6 +48,7 @@ export function AccountFormDialog({ open, onOpenChange, account }: AccountFormDi
       currency: 'INR',
       icon: '',
       displayOrder: 0,
+      isActive: true,
     },
   })
 
@@ -65,6 +67,7 @@ export function AccountFormDialog({ open, onOpenChange, account }: AccountFormDi
             currency: account.currency,
             icon: account.icon ?? '',
             displayOrder: account.displayOrder,
+            isActive: account.isActive,
           }
         : {
             name: '',
@@ -74,6 +77,7 @@ export function AccountFormDialog({ open, onOpenChange, account }: AccountFormDi
             currency: 'INR',
             icon: '',
             displayOrder: 0,
+            isActive: true,
           },
     )
   }, [open, account, form])
@@ -81,8 +85,17 @@ export function AccountFormDialog({ open, onOpenChange, account }: AccountFormDi
   async function onSubmit(values: AccountFormSchema) {
     try {
       if (isEditMode && account) {
-        await updateAccount.mutateAsync({ ...values, isActive: account.isActive })
-        toast.success('Account updated.')
+        const wasActive = account.isActive
+        await updateAccount.mutateAsync(values)
+        if (values.isActive !== wasActive) {
+          toast.success(
+            values.isActive
+              ? `${values.name} is visible again.`
+              : `${values.name} hidden. It's excluded from balances, reports, and charts.`,
+          )
+        } else {
+          toast.success('Account updated.')
+        }
       } else {
         await createAccount.mutateAsync(values)
         toast.success('Account created.')
@@ -192,6 +205,26 @@ export function AccountFormDialog({ open, onOpenChange, account }: AccountFormDi
                 </FormItem>
               )}
             />
+
+            {isEditMode && (
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel>Visible</FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Hidden accounts are excluded from balances, reports, and charts.
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} aria-label="Account visible" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
 
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>

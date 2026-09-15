@@ -165,6 +165,31 @@ public class ReportsControllerTests(CustomWebApplicationFactory factory) : IClas
     }
 
     [Fact]
+    public async Task GetDashboard_HiddenAccount_ExcludedFromTotalsCategoriesAndTrend()
+    {
+        var (client, userId) = await TestAuthHelper.RegisterAndLoginAsync(factory);
+        var visibleAccountId = await CreateAccountAsync(client, "Visible");
+        var hiddenAccountId = await CreateAccountAsync(client, "Hidden");
+        var categoryId = await GetFoodExpenseCategoryIdAsync(client);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        await SeedTransactionAsync(userId, visibleAccountId, TransactionType.Income, 5_000m, today);
+        await SeedTransactionAsync(userId, visibleAccountId, TransactionType.Expense, 1_000m, today, categoryId);
+        // These would double every total below if the hidden account weren't excluded.
+        await SeedTransactionAsync(userId, hiddenAccountId, TransactionType.Income, 50_000m, today);
+        await SeedTransactionAsync(userId, hiddenAccountId, TransactionType.Expense, 20_000m, today, categoryId);
+
+        await client.PatchAsync($"/api/accounts/{hiddenAccountId}/archive", null);
+
+        var response = await client.GetAsync("/api/reports/dashboard");
+        var body = await response.Content.ReadFromJsonAsync<ApiResponse<DashboardDto>>();
+
+        Assert.Equal(5_000m, body!.Data!.ThisMonthIncome);
+        Assert.Equal(1_000m, body.Data.ThisMonthExpense);
+        Assert.Equal(1_000m, body.Data.TopExpenseCategories[0].Amount);
+    }
+
+    [Fact]
     public async Task UserA_DashboardNeverIncludesUserBData()
     {
         var (clientB, userBId) = await TestAuthHelper.RegisterAndLoginAsync(factory);
