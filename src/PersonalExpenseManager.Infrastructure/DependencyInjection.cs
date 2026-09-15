@@ -7,6 +7,7 @@ using PersonalExpenseManager.Application.Accounts;
 using PersonalExpenseManager.Application.Categories;
 using PersonalExpenseManager.Application.Common;
 using PersonalExpenseManager.Application.Dashboard;
+using PersonalExpenseManager.Application.RecurringTransactions;
 using PersonalExpenseManager.Application.Reports;
 using PersonalExpenseManager.Application.Transactions;
 using PersonalExpenseManager.Infrastructure.Email;
@@ -15,6 +16,7 @@ using PersonalExpenseManager.Infrastructure.Persistence;
 using PersonalExpenseManager.Infrastructure.Persistence.Commands;
 using PersonalExpenseManager.Infrastructure.Persistence.Queries;
 using PersonalExpenseManager.Infrastructure.Persistence.Seeding;
+using PersonalExpenseManager.Infrastructure.Services;
 
 namespace PersonalExpenseManager.Infrastructure;
 
@@ -75,6 +77,9 @@ public static class DependencyInjection
         services.AddScoped<ITransactionCommands, TransactionCommands>();
         services.AddScoped<IDashboardQueries, DashboardQueries>();
         services.AddScoped<IReportsQueries, ReportsQueries>();
+        services.AddScoped<IRecurringTransactionQueries, RecurringTransactionQueries>();
+        services.AddScoped<IRecurringTransactionCommands, RecurringTransactionCommands>();
+        services.AddScoped<IRecurringTransactionProcessor, RecurringTransactionProcessor>();
 
         return services;
     }

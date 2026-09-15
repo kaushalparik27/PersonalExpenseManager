@@ -4,6 +4,7 @@ using PersonalExpenseManager.Api.Filters;
 using PersonalExpenseManager.Application;
 using PersonalExpenseManager.Infrastructure;
 using PersonalExpenseManager.Infrastructure.Persistence.Seeding;
+using PersonalExpenseManager.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,14 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Integration tests run in the Testing environment and drive the recurring
+// transaction engine explicitly via IRecurringTransactionProcessor — the timer-driven
+// background sweep would otherwise run unpredictably mid-test.
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddHostedService<RecurringTransactionProcessingService>();
+}
 
 // Secure by default: every endpoint requires authentication unless explicitly
 // marked [AllowAnonymous] (register/login/forgot-password/reset-password).
