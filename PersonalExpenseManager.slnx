@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PersonalExpenseManager.Api/PersonalExpenseManager.Api.csproj" />
+    <Project Path="src/PersonalExpenseManager.Application/PersonalExpenseManager.Application.csproj" />
+    <Project Path="src/PersonalExpenseManager.Domain/PersonalExpenseManager.Domain.csproj" />
+    <Project Path="src/PersonalExpenseManager.Infrastructure/PersonalExpenseManager.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PersonalExpenseManager.IntegrationTests/PersonalExpenseManager.IntegrationTests.csproj" />
+    <Project Path="tests/PersonalExpenseManager.UnitTests/PersonalExpenseManager.UnitTests.csproj" />
+  </Folder>
+</Solution>
