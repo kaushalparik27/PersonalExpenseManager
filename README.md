@@ -2,7 +2,7 @@
 
 A premium personal finance web application: accounts, income/expense tracking, transfers, categories, recurring transactions, dashboards, and reports.
 
-**Status:** Phases 1–5 (Foundation, Authentication, Database, Accounts, Categories) complete. Transaction CRUD, the dashboard, and reporting are not yet implemented — see [Development Phases](#development-phases).
+**Status:** Phases 1–6 (Foundation, Authentication, Database, Accounts, Categories, Transactions) complete. The dashboard, reporting, and the recurring-transaction engine are not yet implemented — see [Development Phases](#development-phases).
 
 ## Stack
 
@@ -124,7 +124,7 @@ Authentication is mandatory and precedes financial functionality:
 3. **Database** *(done)* — categories, transactions, recurring transactions, tags, migrations, seed data.
 4. **Accounts** *(done)* — CRUD, centralized balance calculation.
 5. **Categories** *(done)* — expense/income hierarchy, archive, reorder.
-6. **Transactions** — expense/income/transfer, search, filtering, pagination.
+6. **Transactions** *(done)* — expense/income/transfer entry, edit, soft delete, search, filtering, pagination.
 7. **Dashboard** — summary cards, charts.
 8. **Reports** — income/expense/cash-flow/category/account analysis, drilldown.
 9. **Recurring Transactions.**

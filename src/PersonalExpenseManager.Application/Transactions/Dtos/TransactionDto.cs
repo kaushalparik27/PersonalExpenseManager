@@ -1,0 +1,26 @@
+namespace PersonalExpenseManager.Application.Transactions.Dtos;
+
+public record TransactionDto(
+    Guid Id,
+    DateOnly TransactionDate,
+    string TransactionType,
+    Guid AccountId,
+    string AccountName,
+    Guid? TransferToAccountId,
+    string? TransferToAccountName,
+    decimal Amount,
+    Guid? ExpenseCategoryId,
+    string? ExpenseCategoryName,
+    Guid? ExpenseSubCategoryId,
+    string? ExpenseSubCategoryName,
+    Guid? IncomeCategoryId,
+    string? IncomeCategoryName,
+    Guid? IncomeSubCategoryId,
+    string? IncomeSubCategoryName,
+    string? Description,
+    string? Notes,
+    string? Payee,
+    string? ReferenceNumber,
+    IReadOnlyList<string> Tags,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
