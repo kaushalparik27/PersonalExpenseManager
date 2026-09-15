@@ -49,7 +49,8 @@ public class DashboardQueries(
             : null;
 
         var topExpenseCategories = await GetTopExpenseCategoriesAsync(userId, monthStart, monthEnd, cancellationToken);
-        var trend = await GetMonthlyTrendAsync(userId, monthStart, TrendMonths, cancellationToken);
+        var trendStart = monthStart.AddMonths(-(TrendMonths - 1));
+        var trend = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, trendStart, monthEnd, cancellationToken);
 
         var recentTransactionsPage = await transactionQueries.GetPagedAsync(
             userId,
@@ -114,30 +115,6 @@ public class DashboardQueries(
         return grouped
             .Select(g => new CategoryAmountDto(names.GetValueOrDefault(g.CategoryId, "Unknown"), g.Total))
             .ToList();
-    }
-
-    private async Task<IReadOnlyList<MonthlyAmountDto>> GetMonthlyTrendAsync(
-        Guid userId, DateOnly currentMonthStart, int monthCount, CancellationToken cancellationToken)
-    {
-        var earliestMonthStart = currentMonthStart.AddMonths(-(monthCount - 1));
-
-        var rows = await db.Transactions
-            .Where(t => t.UserId == userId && t.TransactionDate >= earliestMonthStart
-                && (t.TransactionType == TransactionType.Income || t.TransactionType == TransactionType.Expense))
-            .GroupBy(t => new { t.TransactionDate.Year, t.TransactionDate.Month, t.TransactionType })
-            .Select(g => new { g.Key.Year, g.Key.Month, g.Key.TransactionType, Total = g.Sum(t => t.Amount) })
-            .ToListAsync(cancellationToken);
-
-        var result = new List<MonthlyAmountDto>();
-        for (var i = monthCount - 1; i >= 0; i--)
-        {
-            var month = currentMonthStart.AddMonths(-i);
-            var income = rows.FirstOrDefault(r => r.Year == month.Year && r.Month == month.Month && r.TransactionType == TransactionType.Income)?.Total ?? 0m;
-            var expense = rows.FirstOrDefault(r => r.Year == month.Year && r.Month == month.Month && r.TransactionType == TransactionType.Expense)?.Total ?? 0m;
-            result.Add(new MonthlyAmountDto(month.Year, month.Month, income, expense));
-        }
-
-        return result;
     }
 
     private static IReadOnlyList<string> BuildInsights(

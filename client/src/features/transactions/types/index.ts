@@ -43,6 +43,7 @@ export interface TransactionListFilters {
   toDate?: string
   accountId?: string
   categoryId?: string
+  subCategoryId?: string
   transactionType?: TransactionType
   search?: string
   minAmount?: number

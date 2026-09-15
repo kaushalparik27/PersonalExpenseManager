@@ -7,6 +7,7 @@ using PersonalExpenseManager.Application.Accounts;
 using PersonalExpenseManager.Application.Categories;
 using PersonalExpenseManager.Application.Common;
 using PersonalExpenseManager.Application.Dashboard;
+using PersonalExpenseManager.Application.Reports;
 using PersonalExpenseManager.Application.Transactions;
 using PersonalExpenseManager.Infrastructure.Email;
 using PersonalExpenseManager.Infrastructure.Identity;
@@ -73,6 +74,7 @@ public static class DependencyInjection
         services.AddScoped<ITransactionQueries, TransactionQueries>();
         services.AddScoped<ITransactionCommands, TransactionCommands>();
         services.AddScoped<IDashboardQueries, DashboardQueries>();
+        services.AddScoped<IReportsQueries, ReportsQueries>();
 
         return services;
     }
