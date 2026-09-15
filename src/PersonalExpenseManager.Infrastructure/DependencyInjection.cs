@@ -4,11 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PersonalExpenseManager.Application.Accounts;
+using PersonalExpenseManager.Application.Categories;
 using PersonalExpenseManager.Application.Common;
 using PersonalExpenseManager.Infrastructure.Email;
 using PersonalExpenseManager.Infrastructure.Identity;
 using PersonalExpenseManager.Infrastructure.Persistence;
 using PersonalExpenseManager.Infrastructure.Persistence.Queries;
+using PersonalExpenseManager.Infrastructure.Persistence.Seeding;
 
 namespace PersonalExpenseManager.Infrastructure;
 
@@ -58,6 +60,7 @@ public static class DependencyInjection
 
         services.AddScoped<IEmailSender, DevEmailSender>();
         services.AddScoped<IAccountQueries, AccountQueries>();
+        services.AddScoped<IDefaultCategorySeeder, DefaultCategorySeeder>();
 
         return services;
     }

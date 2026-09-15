@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PersonalExpenseManager.Api.Common;
 using PersonalExpenseManager.Application.Auth.Dtos;
+using PersonalExpenseManager.Application.Categories;
 using PersonalExpenseManager.Application.Common;
 using PersonalExpenseManager.Infrastructure.Identity;
 
@@ -14,6 +15,7 @@ public class AuthController(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     IEmailSender emailSender,
+    IDefaultCategorySeeder defaultCategorySeeder,
     IConfiguration configuration,
     ILogger<AuthController> logger) : ControllerBase
 {
@@ -45,6 +47,7 @@ public class AuthController(
 
         logger.LogInformation("New user registered: {UserId}", user.Id);
 
+        await defaultCategorySeeder.SeedDefaultExpenseCategoriesAsync(user.Id);
         await signInManager.SignInAsync(user, isPersistent: true);
 
         return Ok(ApiResponse<UserProfileDto>.Ok(ToProfile(user)));

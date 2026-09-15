@@ -14,6 +14,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     }
 
     public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
+    public DbSet<ExpenseSubCategory> ExpenseSubCategories => Set<ExpenseSubCategory>();
+    public DbSet<IncomeCategory> IncomeCategories => Set<IncomeCategory>();
+    public DbSet<IncomeSubCategory> IncomeSubCategories => Set<IncomeSubCategory>();
+    public DbSet<Tag> Tags => Set<Tag>();
+    public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<TransactionTag> TransactionTags => Set<TransactionTag>();
+    public DbSet<RecurringTransaction> RecurringTransactions => Set<RecurringTransaction>();
+    public DbSet<ApplicationSettings> ApplicationSettings => Set<ApplicationSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

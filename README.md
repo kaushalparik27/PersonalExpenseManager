@@ -2,7 +2,7 @@
 
 A premium personal finance web application: accounts, income/expense tracking, transfers, categories, recurring transactions, dashboards, and reports.
 
-**Status:** Phase 1 (Foundation) complete. Authentication endpoints, financial features, and reporting are not yet implemented — see [Development Phases](#development-phases).
+**Status:** Phases 1–3 (Foundation, Authentication, Database) complete. Account/category/transaction CRUD APIs, the dashboard, and reporting are not yet implemented — see [Development Phases](#development-phases).
 
 ## Stack
 
@@ -77,6 +77,19 @@ The app runs at `http://localhost:5173`.
 dotnet test
 ```
 
+Integration tests run against a separate `personal_expense_manager_test` database on the same Postgres container (schema is dropped and recreated automatically per test class) — no manual setup needed beyond having Postgres running.
+
+## Demo Data
+
+Running the API in Development automatically seeds a demo account (idempotent — safe to restart):
+
+- Email: `demo@example.com`
+- Password: `Demo!Passw0rd`
+
+It comes with 4 accounts, expense/income categories, and ~4 months of sample transactions, so the dashboard/reports UI has realistic data to render once those features exist. This is local dev-only data, not a permanent system account.
+
+Every new registration also gets a starter set of expense categories (Food, Transportation, Utilities, etc.) automatically.
+
 ## 8. Docker
 
 `docker-compose.yml` provisions PostgreSQL only (the app itself runs natively for development). Stop it with:
@@ -107,8 +120,8 @@ client/                                    # React + Vite frontend (feature-orie
 Authentication is mandatory and precedes financial functionality:
 
 1. **Foundation** *(done)* — solution, React/Vite, Tailwind, shadcn/ui, PostgreSQL Docker, EF Core, ASP.NET Core Identity, basic API infra.
-2. **Authentication** — registration, login, logout, forgot/reset password, protected routes, API authorization, user ownership tests.
-3. **Database** — accounts, categories, transactions, recurring, tags, seed data.
+2. **Authentication** *(done)* — registration, login, logout, forgot/reset password, protected routes, API authorization, user ownership tests.
+3. **Database** *(done)* — categories, transactions, recurring transactions, tags, migrations, seed data.
 4. **Accounts** — CRUD, balance calculation.
 5. **Categories** — expense/income hierarchy.
 6. **Transactions** — expense/income/transfer, search, filtering, pagination.

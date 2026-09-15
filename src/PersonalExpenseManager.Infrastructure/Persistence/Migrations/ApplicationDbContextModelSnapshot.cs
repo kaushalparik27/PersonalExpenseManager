@@ -210,6 +210,430 @@ namespace PersonalExpenseManager.Infrastructure.Persistence.Migrations
                     b.ToTable("Accounts", (string)null);
                 });
 
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.ApplicationSettings", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DefaultCurrency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("ApplicationSettings", (string)null);
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.ExpenseCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisplayOrder");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("ExpenseCategories", (string)null);
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.ExpenseSubCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ExpenseCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpenseCategoryId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ExpenseCategoryId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("ExpenseSubCategories", (string)null);
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.IncomeCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisplayOrder");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("IncomeCategories", (string)null);
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.IncomeSubCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("IncomeCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IncomeCategoryId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("IncomeCategoryId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("IncomeSubCategories", (string)null);
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.RecurringTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("NUMERIC(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("ExpenseCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ExpenseSubCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Frequency")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("IncomeCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("IncomeSubCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly>("NextOccurrenceDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("TransferToAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("ExpenseCategoryId");
+
+                    b.HasIndex("ExpenseSubCategoryId");
+
+                    b.HasIndex("IncomeCategoryId");
+
+                    b.HasIndex("IncomeSubCategoryId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("NextOccurrenceDate");
+
+                    b.HasIndex("TransferToAccountId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RecurringTransactions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RecurringTransactions_Amount_Positive", "\"Amount\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.Tag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Tags", (string)null);
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.Transaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("NUMERIC(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("ExpenseCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ExpenseSubCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("IncomeCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("IncomeSubCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRecurring")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Payee")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("RecurringTransactionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateOnly>("TransactionDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("TransferToAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ExpenseCategoryId");
+
+                    b.HasIndex("ExpenseSubCategoryId");
+
+                    b.HasIndex("IncomeCategoryId");
+
+                    b.HasIndex("IncomeSubCategoryId");
+
+                    b.HasIndex("RecurringTransactionId");
+
+                    b.HasIndex("TransactionDate");
+
+                    b.HasIndex("TransactionType");
+
+                    b.HasIndex("TransferToAccountId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "TransactionDate");
+
+                    b.ToTable("Transactions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Transactions_Amount_Sign", "(\"TransactionType\" = 'Adjustment' AND \"Amount\" <> 0) OR (\"TransactionType\" <> 'Adjustment' AND \"Amount\" > 0)");
+
+                            t.HasCheckConstraint("CK_Transactions_Transfer_DifferentAccounts", "\"TransferToAccountId\" IS NULL OR \"TransferToAccountId\" <> \"AccountId\"");
+                        });
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.TransactionTag", b =>
+                {
+                    b.Property<Guid>("TransactionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TransactionId", "TagId");
+
+                    b.HasIndex("TagId");
+
+                    b.ToTable("TransactionTags", (string)null);
+                });
+
             modelBuilder.Entity("PersonalExpenseManager.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -350,6 +774,195 @@ namespace PersonalExpenseManager.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.ApplicationSettings", b =>
+                {
+                    b.HasOne("PersonalExpenseManager.Infrastructure.Identity.ApplicationUser", null)
+                        .WithOne()
+                        .HasForeignKey("PersonalExpenseManager.Domain.Entities.ApplicationSettings", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.ExpenseCategory", b =>
+                {
+                    b.HasOne("PersonalExpenseManager.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.ExpenseSubCategory", b =>
+                {
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.ExpenseCategory", "ExpenseCategory")
+                        .WithMany("SubCategories")
+                        .HasForeignKey("ExpenseCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PersonalExpenseManager.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ExpenseCategory");
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.IncomeCategory", b =>
+                {
+                    b.HasOne("PersonalExpenseManager.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.IncomeSubCategory", b =>
+                {
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.IncomeCategory", "IncomeCategory")
+                        .WithMany("SubCategories")
+                        .HasForeignKey("IncomeCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PersonalExpenseManager.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("IncomeCategory");
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.RecurringTransaction", b =>
+                {
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.Account", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.ExpenseCategory", null)
+                        .WithMany()
+                        .HasForeignKey("ExpenseCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.ExpenseSubCategory", null)
+                        .WithMany()
+                        .HasForeignKey("ExpenseSubCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.IncomeCategory", null)
+                        .WithMany()
+                        .HasForeignKey("IncomeCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.IncomeSubCategory", null)
+                        .WithMany()
+                        .HasForeignKey("IncomeSubCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.Account", null)
+                        .WithMany()
+                        .HasForeignKey("TransferToAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PersonalExpenseManager.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.Tag", b =>
+                {
+                    b.HasOne("PersonalExpenseManager.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.Transaction", b =>
+                {
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.Account", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.ExpenseCategory", null)
+                        .WithMany()
+                        .HasForeignKey("ExpenseCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.ExpenseSubCategory", null)
+                        .WithMany()
+                        .HasForeignKey("ExpenseSubCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.IncomeCategory", null)
+                        .WithMany()
+                        .HasForeignKey("IncomeCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.IncomeSubCategory", null)
+                        .WithMany()
+                        .HasForeignKey("IncomeSubCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.RecurringTransaction", null)
+                        .WithMany()
+                        .HasForeignKey("RecurringTransactionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.Account", null)
+                        .WithMany()
+                        .HasForeignKey("TransferToAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PersonalExpenseManager.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.TransactionTag", b =>
+                {
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.Tag", "Tag")
+                        .WithMany()
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PersonalExpenseManager.Domain.Entities.Transaction", "Transaction")
+                        .WithMany("TransactionTags")
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tag");
+
+                    b.Navigation("Transaction");
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.ExpenseCategory", b =>
+                {
+                    b.Navigation("SubCategories");
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.IncomeCategory", b =>
+                {
+                    b.Navigation("SubCategories");
+                });
+
+            modelBuilder.Entity("PersonalExpenseManager.Domain.Entities.Transaction", b =>
+                {
+                    b.Navigation("TransactionTags");
                 });
 #pragma warning restore 612, 618
         }

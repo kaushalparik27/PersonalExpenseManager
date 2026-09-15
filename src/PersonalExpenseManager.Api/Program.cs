@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using PersonalExpenseManager.Api.Filters;
 using PersonalExpenseManager.Application;
 using PersonalExpenseManager.Infrastructure;
+using PersonalExpenseManager.Infrastructure.Persistence.Seeding;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,6 +42,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    await DevDataSeeder.SeedAsync(app.Services);
 }
 
 app.UseHttpsRedirection();

@@ -3,7 +3,7 @@ using PersonalExpenseManager.Domain.Enums;
 
 namespace PersonalExpenseManager.Domain.Entities;
 
-public class Account : BaseEntity
+public class Account : BaseEntity, IUserOwned
 {
     public Guid UserId { get; set; }
     public string Name { get; set; } = string.Empty;
