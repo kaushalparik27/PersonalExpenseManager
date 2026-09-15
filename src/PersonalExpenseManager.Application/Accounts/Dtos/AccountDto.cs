@@ -6,6 +6,7 @@ public record AccountDto(
     string AccountType,
     string? Description,
     decimal OpeningBalance,
+    decimal CurrentBalance,
     string Currency,
     bool IsActive,
     int DisplayOrder,

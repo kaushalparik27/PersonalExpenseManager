@@ -2,7 +2,7 @@
 
 A premium personal finance web application: accounts, income/expense tracking, transfers, categories, recurring transactions, dashboards, and reports.
 
-**Status:** Phases 1–3 (Foundation, Authentication, Database) complete. Account/category/transaction CRUD APIs, the dashboard, and reporting are not yet implemented — see [Development Phases](#development-phases).
+**Status:** Phases 1–4 (Foundation, Authentication, Database, Accounts) complete. Category/transaction CRUD, the dashboard, and reporting are not yet implemented — see [Development Phases](#development-phases).
 
 ## Stack
 
@@ -122,7 +122,7 @@ Authentication is mandatory and precedes financial functionality:
 1. **Foundation** *(done)* — solution, React/Vite, Tailwind, shadcn/ui, PostgreSQL Docker, EF Core, ASP.NET Core Identity, basic API infra.
 2. **Authentication** *(done)* — registration, login, logout, forgot/reset password, protected routes, API authorization, user ownership tests.
 3. **Database** *(done)* — categories, transactions, recurring transactions, tags, migrations, seed data.
-4. **Accounts** — CRUD, balance calculation.
+4. **Accounts** *(done)* — CRUD, centralized balance calculation.
 5. **Categories** — expense/income hierarchy.
 6. **Transactions** — expense/income/transfer, search, filtering, pagination.
 7. **Dashboard** — summary cards, charts.

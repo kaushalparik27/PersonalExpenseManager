@@ -9,6 +9,7 @@ using PersonalExpenseManager.Application.Common;
 using PersonalExpenseManager.Infrastructure.Email;
 using PersonalExpenseManager.Infrastructure.Identity;
 using PersonalExpenseManager.Infrastructure.Persistence;
+using PersonalExpenseManager.Infrastructure.Persistence.Commands;
 using PersonalExpenseManager.Infrastructure.Persistence.Queries;
 using PersonalExpenseManager.Infrastructure.Persistence.Seeding;
 
@@ -59,7 +60,9 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IEmailSender, DevEmailSender>();
+        services.AddScoped<IAccountBalanceCalculator, AccountBalanceCalculator>();
         services.AddScoped<IAccountQueries, AccountQueries>();
+        services.AddScoped<IAccountCommands, AccountCommands>();
         services.AddScoped<IDefaultCategorySeeder, DefaultCategorySeeder>();
 
         return services;

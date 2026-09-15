@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using PersonalExpenseManager.Api.Filters;
 using PersonalExpenseManager.Application;
@@ -9,7 +10,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ValidationFilter>();
-});
+})
+    .AddJsonOptions(options =>
+    {
+        // Enums travel as their names (e.g. "Bank", "Transfer") over the wire,
+        // matching how they're stored in Postgres (HasConversion<string>()).
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

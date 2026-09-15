@@ -1,23 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using PersonalExpenseManager.Api.Common;
 using PersonalExpenseManager.Application.Accounts;
+using PersonalExpenseManager.Application.Accounts.Dtos;
 using PersonalExpenseManager.Application.Common;
 
 namespace PersonalExpenseManager.Api.Controllers;
 
-// Read-only for now: added during the Authentication phase to prove and test
-// per-user ownership isolation. The Accounts phase extends this controller with
-// create/update/delete and balance calculation; it does not replace it.
 [ApiController]
 [Route("api/accounts")]
-public class AccountsController(IAccountQueries accountQueries) : ControllerBase
+public class AccountsController(IAccountQueries accountQueries, IAccountCommands accountCommands) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
         var accounts = await accountQueries.GetForUserAsync(userId, cancellationToken);
-        return Ok(ApiResponse<object>.Ok(accounts));
+        return Ok(ApiResponse<IReadOnlyList<AccountDto>>.Ok(accounts));
     }
 
     [HttpGet("{id:guid}")]
@@ -31,6 +29,58 @@ public class AccountsController(IAccountQueries accountQueries) : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Account not found."));
         }
 
-        return Ok(ApiResponse<object>.Ok(account));
+        return Ok(ApiResponse<AccountDto>.Ok(account));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create(CreateAccountRequest request, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var account = await accountCommands.CreateAsync(userId, request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = account.Id }, ApiResponse<AccountDto>.Ok(account));
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, UpdateAccountRequest request, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var account = await accountCommands.UpdateAsync(userId, id, request, cancellationToken);
+
+        if (account is null)
+        {
+            return NotFound(ApiResponse<object>.Fail("Account not found."));
+        }
+
+        return Ok(ApiResponse<AccountDto>.Ok(account));
+    }
+
+    [HttpPatch("{id:guid}/archive")]
+    public async Task<IActionResult> Archive(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var archived = await accountCommands.ArchiveAsync(userId, id, cancellationToken);
+
+        if (!archived)
+        {
+            return NotFound(ApiResponse<object>.Fail("Account not found."));
+        }
+
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var result = await accountCommands.DeleteAsync(userId, id, cancellationToken);
+
+        return result switch
+        {
+            AccountDeleteResult.NotFound => NotFound(ApiResponse<object>.Fail("Account not found.")),
+            AccountDeleteResult.HasTransactions => Conflict(
+                ApiResponse<object>.Fail("This account has existing transactions. Archive it instead of deleting.")),
+            AccountDeleteResult.Deleted => NoContent(),
+            _ => throw new InvalidOperationException($"Unhandled {nameof(AccountDeleteResult)} value: {result}"),
+        };
     }
 }
