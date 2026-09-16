@@ -49,9 +49,9 @@ export function DashboardPage() {
 
       <SummaryCards dashboard={dashboard} />
 
-      <SummarySection />
-
       <InsightsBanner insights={dashboard.insights} />
+
+      <SummarySection />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <BalanceTrendChart totalBalance={dashboard.totalBalance} />
