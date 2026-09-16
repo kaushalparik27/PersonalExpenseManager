@@ -93,6 +93,47 @@ public class DashboardQueries(
         return (income, expense);
     }
 
+    // Computes every period's totals up front rather than accepting a selection
+    // param — the Summary section lets the user pick 1-6 of these to display,
+    // and picking client-side avoids a bespoke multi-value query-string API.
+    public async Task<IReadOnlyList<PeriodSummaryDto>> GetPeriodSummariesAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var accounts = await accountQueries.GetForUserAsync(userId, cancellationToken);
+        var activeAccountIds = accounts.Where(a => a.IsActive).Select(a => a.Id).ToHashSet();
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var monthStart = new DateOnly(today.Year, today.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        var prevMonthStart = monthStart.AddMonths(-1);
+        var prevMonthEnd = monthStart.AddDays(-1);
+        var yearStart = new DateOnly(today.Year, 1, 1);
+        var yearEnd = new DateOnly(today.Year, 12, 31);
+        var prevYearStart = new DateOnly(today.Year - 1, 1, 1);
+        var prevYearEnd = new DateOnly(today.Year - 1, 12, 31);
+
+        var ranges = new (SummaryPeriod Period, DateOnly From, DateOnly To)[]
+        {
+            (SummaryPeriod.Today, today, today),
+            (SummaryPeriod.Yesterday, today.AddDays(-1), today.AddDays(-1)),
+            (SummaryPeriod.Last7Days, today.AddDays(-6), today),
+            (SummaryPeriod.ThisMonth, monthStart, monthEnd),
+            (SummaryPeriod.Last31Days, today.AddDays(-30), today),
+            (SummaryPeriod.LastMonth, prevMonthStart, prevMonthEnd),
+            (SummaryPeriod.ThisYear, yearStart, yearEnd),
+            (SummaryPeriod.LastYear, prevYearStart, prevYearEnd),
+            (SummaryPeriod.Total, DateOnly.MinValue, DateOnly.MaxValue),
+        };
+
+        var result = new List<PeriodSummaryDto>();
+        foreach (var (period, from, to) in ranges)
+        {
+            var (income, expense) = await GetIncomeExpenseTotalsAsync(userId, from, to, activeAccountIds, cancellationToken);
+            result.Add(new PeriodSummaryDto(period, income, expense));
+        }
+
+        return result;
+    }
+
     // Balance is cumulative, so the trend's starting point needs everything that
     // ever happened on an active account, not just the buckets being plotted —
     // unlike income/expense totals, which are naturally scoped to one period.

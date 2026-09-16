@@ -44,7 +44,7 @@ export function BalanceTrendChart({ totalBalance }: BalanceTrendChartProps) {
     <Card>
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <CardTitle className="text-base">Balance Trend</CardTitle>
+          <CardTitle className="text-base">Balance</CardTitle>
           <p className="mt-0.5 text-lg font-semibold tabular-nums text-foreground">{formatCurrency(totalBalance)}</p>
         </div>
         <Select value={granularity} onValueChange={(value) => setGranularity(value as BalanceTrendGranularity)}>

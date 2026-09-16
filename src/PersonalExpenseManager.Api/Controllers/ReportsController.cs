@@ -27,6 +27,13 @@ public class ReportsController(IDashboardQueries dashboardQueries, IReportsQueri
         return Ok(ApiResponse<IReadOnlyList<BalanceTrendPointDto>>.Ok(trend));
     }
 
+    [HttpGet("summary")]
+    public async Task<IActionResult> GetSummary(CancellationToken cancellationToken)
+    {
+        var summary = await dashboardQueries.GetPeriodSummariesAsync(User.GetUserId(), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<PeriodSummaryDto>>.Ok(summary));
+    }
+
     [HttpGet("income")]
     public async Task<IActionResult> GetIncomeReport([FromQuery] DateOnly? fromDate, [FromQuery] DateOnly? toDate, CancellationToken cancellationToken)
     {

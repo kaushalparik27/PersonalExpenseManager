@@ -8,4 +8,6 @@ public interface IDashboardQueries
 
     Task<IReadOnlyList<BalanceTrendPointDto>> GetBalanceTrendAsync(
         Guid userId, BalanceTrendGranularity granularity, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<PeriodSummaryDto>> GetPeriodSummariesAsync(Guid userId, CancellationToken cancellationToken = default);
 }

@@ -8,6 +8,7 @@ import { IncomeExpenseChart } from '@/features/dashboard/components/IncomeExpens
 import { InsightsBanner } from '@/features/dashboard/components/InsightsBanner'
 import { RecentTransactionsList } from '@/features/dashboard/components/RecentTransactionsList'
 import { SummaryCards } from '@/features/dashboard/components/SummaryCards'
+import { SummarySection } from '@/features/dashboard/components/SummarySection'
 import { useDashboard } from '@/features/dashboard/hooks/useDashboard'
 
 export function DashboardPage() {
@@ -47,6 +48,8 @@ export function DashboardPage() {
       <AccountBalancesRow accounts={dashboard.accounts} />
 
       <SummaryCards dashboard={dashboard} />
+
+      <SummarySection />
 
       <InsightsBanner insights={dashboard.insights} />
 

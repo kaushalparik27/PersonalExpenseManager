@@ -25,6 +25,23 @@ export interface BalanceTrendPoint {
   balance: number
 }
 
+export type SummaryPeriod =
+  | 'Today'
+  | 'Yesterday'
+  | 'Last7Days'
+  | 'ThisMonth'
+  | 'Last31Days'
+  | 'LastMonth'
+  | 'ThisYear'
+  | 'LastYear'
+  | 'Total'
+
+export interface PeriodSummary {
+  period: SummaryPeriod
+  income: number
+  expense: number
+}
+
 export interface Dashboard {
   totalBalance: number
   balanceByAccountType: AccountTypeBalance[]

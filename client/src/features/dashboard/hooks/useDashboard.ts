@@ -15,3 +15,10 @@ export function useBalanceTrend(granularity: BalanceTrendGranularity) {
     queryFn: () => dashboardApi.balanceTrend(granularity),
   })
 }
+
+export function useSummary() {
+  return useQuery({
+    queryKey: ['dashboard', 'summary'],
+    queryFn: dashboardApi.summary,
+  })
+}
