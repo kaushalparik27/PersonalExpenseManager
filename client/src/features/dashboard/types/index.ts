@@ -18,6 +18,12 @@ export interface MonthlyAmount {
   expense: number
 }
 
+export interface BalanceTrendPoint {
+  year: number
+  month: number
+  balance: number
+}
+
 export interface Dashboard {
   totalBalance: number
   balanceByAccountType: AccountTypeBalance[]
@@ -28,6 +34,7 @@ export interface Dashboard {
   expenseGrowthPercent: number | null
   topExpenseCategories: CategoryAmount[]
   incomeVsExpenseTrend: MonthlyAmount[]
+  balanceTrend: BalanceTrendPoint[]
   recentTransactions: Transaction[]
   accounts: Account[]
   insights: string[]

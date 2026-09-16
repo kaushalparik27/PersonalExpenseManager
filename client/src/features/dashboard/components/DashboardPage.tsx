@@ -2,6 +2,7 @@ import { LayoutDashboard } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PlaceholderPage } from '@/components/common/PlaceholderPage'
 import { AccountBalancesRow } from '@/features/dashboard/components/AccountBalancesRow'
+import { BalanceTrendChart } from '@/features/dashboard/components/BalanceTrendChart'
 import { ExpenseByCategoryChart } from '@/features/dashboard/components/ExpenseByCategoryChart'
 import { IncomeExpenseChart } from '@/features/dashboard/components/IncomeExpenseChart'
 import { InsightsBanner } from '@/features/dashboard/components/InsightsBanner'
@@ -49,7 +50,10 @@ export function DashboardPage() {
 
       <InsightsBanner insights={dashboard.insights} />
 
-      <IncomeExpenseChart data={dashboard.incomeVsExpenseTrend} />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <BalanceTrendChart data={dashboard.balanceTrend} />
+        <IncomeExpenseChart data={dashboard.incomeVsExpenseTrend} />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <ExpenseByCategoryChart data={dashboard.topExpenseCategories} />

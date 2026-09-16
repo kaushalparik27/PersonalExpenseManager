@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PersonalExpenseManager.Application.Accounts;
+using PersonalExpenseManager.Application.Accounts.Dtos;
 using PersonalExpenseManager.Application.Dashboard;
 using PersonalExpenseManager.Application.Dashboard.Dtos;
 using PersonalExpenseManager.Application.Transactions;
@@ -52,6 +53,7 @@ public class DashboardQueries(
         var topExpenseCategories = await GetTopExpenseCategoriesAsync(userId, monthStart, monthEnd, activeAccountIds, cancellationToken);
         var trendStart = monthStart.AddMonths(-(TrendMonths - 1));
         var trend = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, trendStart, monthEnd, activeAccountIds, cancellationToken);
+        var balanceTrend = await GetBalanceTrendAsync(userId, activeAccounts, trendStart, monthEnd, cancellationToken);
 
         var recentTransactionsPage = await transactionQueries.GetPagedAsync(
             userId,
@@ -70,6 +72,7 @@ public class DashboardQueries(
             expenseGrowth,
             topExpenseCategories,
             trend,
+            balanceTrend,
             recentTransactionsPage.Items,
             accounts,
             insights);
@@ -91,6 +94,90 @@ public class DashboardQueries(
         var expense = totals.FirstOrDefault(t => t.Type == TransactionType.Expense)?.Total ?? 0m;
         return (income, expense);
     }
+
+    // Balance is cumulative, so the trend's starting point needs everything that
+    // ever happened on an active account, not just the six months being plotted —
+    // unlike income/expense totals, which are naturally scoped to one period.
+    private async Task<IReadOnlyList<BalanceTrendPointDto>> GetBalanceTrendAsync(
+        Guid userId, IReadOnlyList<AccountDto> activeAccounts, DateOnly trendStart, DateOnly trendEnd, CancellationToken cancellationToken)
+    {
+        if (activeAccounts.Count == 0)
+        {
+            return [];
+        }
+
+        var activeAccountIds = activeAccounts.Select(a => a.Id).ToHashSet();
+        var openingTotal = activeAccounts.Sum(a => a.OpeningBalance);
+
+        var baselineDelta = await GetNetBalanceDeltaAsync(userId, activeAccountIds, before: trendStart, cancellationToken);
+        var monthlyDeltas = await GetMonthlyNetBalanceDeltasAsync(userId, activeAccountIds, trendStart, trendEnd, cancellationToken);
+
+        var runningBalance = openingTotal + baselineDelta;
+        var result = new List<BalanceTrendPointDto>();
+        for (var month = trendStart; month <= trendEnd; month = month.AddMonths(1))
+        {
+            runningBalance += monthlyDeltas.GetValueOrDefault((month.Year, month.Month), 0m);
+            result.Add(new BalanceTrendPointDto(month.Year, month.Month, runningBalance));
+        }
+
+        return result;
+    }
+
+    private async Task<decimal> GetNetBalanceDeltaAsync(
+        Guid userId, ISet<Guid> accountIds, DateOnly before, CancellationToken cancellationToken)
+    {
+        var byType = await db.Transactions
+            .Where(t => t.UserId == userId && accountIds.Contains(t.AccountId) && t.TransactionDate < before)
+            .GroupBy(t => t.TransactionType)
+            .Select(g => new { g.Key, Total = g.Sum(t => t.Amount) })
+            .ToDictionaryAsync(g => g.Key, g => g.Total, cancellationToken);
+
+        var transferIn = await db.Transactions
+            .Where(t => t.UserId == userId && t.TransactionType == TransactionType.Transfer
+                && t.TransferToAccountId != null && accountIds.Contains(t.TransferToAccountId!.Value)
+                && t.TransactionDate < before)
+            .SumAsync(t => (decimal?)t.Amount, cancellationToken) ?? 0m;
+
+        return NetBalanceDelta(byType, transferIn);
+    }
+
+    private async Task<Dictionary<(int Year, int Month), decimal>> GetMonthlyNetBalanceDeltasAsync(
+        Guid userId, ISet<Guid> accountIds, DateOnly from, DateOnly to, CancellationToken cancellationToken)
+    {
+        var byTypeMonthly = await db.Transactions
+            .Where(t => t.UserId == userId && accountIds.Contains(t.AccountId)
+                && t.TransactionDate >= from && t.TransactionDate <= to)
+            .GroupBy(t => new { t.TransactionDate.Year, t.TransactionDate.Month, t.TransactionType })
+            .Select(g => new { g.Key.Year, g.Key.Month, g.Key.TransactionType, Total = g.Sum(t => t.Amount) })
+            .ToListAsync(cancellationToken);
+
+        var transferInMonthly = await db.Transactions
+            .Where(t => t.UserId == userId && t.TransactionType == TransactionType.Transfer
+                && t.TransferToAccountId != null && accountIds.Contains(t.TransferToAccountId!.Value)
+                && t.TransactionDate >= from && t.TransactionDate <= to)
+            .GroupBy(t => new { t.TransactionDate.Year, t.TransactionDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(t => t.Amount) })
+            .ToListAsync(cancellationToken);
+
+        var months = byTypeMonthly.Select(r => (r.Year, r.Month))
+            .Concat(transferInMonthly.Select(r => (r.Year, r.Month)))
+            .Distinct();
+
+        var result = new Dictionary<(int, int), decimal>();
+        foreach (var (year, month) in months)
+        {
+            var byType = byTypeMonthly.Where(r => r.Year == year && r.Month == month)
+                .ToDictionary(r => r.TransactionType, r => r.Total);
+            var transferIn = transferInMonthly.Where(r => r.Year == year && r.Month == month).Sum(r => r.Total);
+            result[(year, month)] = NetBalanceDelta(byType, transferIn);
+        }
+
+        return result;
+    }
+
+    private static decimal NetBalanceDelta(IReadOnlyDictionary<TransactionType, decimal> byType, decimal transferIn) =>
+        byType.GetValueOrDefault(TransactionType.Income) - byType.GetValueOrDefault(TransactionType.Expense)
+        + transferIn - byType.GetValueOrDefault(TransactionType.Transfer) + byType.GetValueOrDefault(TransactionType.Adjustment);
 
     private async Task<IReadOnlyList<CategoryAmountDto>> GetTopExpenseCategoriesAsync(
         Guid userId, DateOnly from, DateOnly to, IReadOnlyCollection<Guid> activeAccountIds, CancellationToken cancellationToken)
