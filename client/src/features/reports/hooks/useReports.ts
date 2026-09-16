@@ -14,8 +14,12 @@ export function useCashFlowReport(range: DateRange) {
   return useQuery({ queryKey: ['reports', 'cash-flow', range], queryFn: () => reportsApi.cashFlow(range) })
 }
 
-export function useCategorySummaryReport(range: DateRange) {
-  return useQuery({ queryKey: ['reports', 'category-summary', range], queryFn: () => reportsApi.categorySummary(range) })
+export function useCategorySummaryReport(range: DateRange, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['reports', 'category-summary', range],
+    queryFn: () => reportsApi.categorySummary(range),
+    enabled: options?.enabled,
+  })
 }
 
 export function useAccountSummaryReport(range: DateRange) {
