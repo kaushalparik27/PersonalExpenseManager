@@ -43,6 +43,8 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <AccountBalancesRow accounts={dashboard.accounts} />
+
       <SummaryCards dashboard={dashboard} />
 
       <InsightsBanner insights={dashboard.insights} />
@@ -53,8 +55,6 @@ export function DashboardPage() {
         <ExpenseByCategoryChart data={dashboard.topExpenseCategories} />
         <RecentTransactionsList transactions={dashboard.recentTransactions} />
       </div>
-
-      <AccountBalancesRow accounts={dashboard.accounts} />
     </div>
   )
 }
