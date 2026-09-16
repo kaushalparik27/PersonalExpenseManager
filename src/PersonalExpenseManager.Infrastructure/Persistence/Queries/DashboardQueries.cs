@@ -53,7 +53,6 @@ public class DashboardQueries(
         var topExpenseCategories = await GetTopExpenseCategoriesAsync(userId, monthStart, monthEnd, activeAccountIds, cancellationToken);
         var trendStart = monthStart.AddMonths(-(TrendMonths - 1));
         var trend = await MonthlySeriesHelper.GetMonthlyIncomeExpenseSeriesAsync(db, userId, trendStart, monthEnd, activeAccountIds, cancellationToken);
-        var balanceTrend = await GetBalanceTrendAsync(userId, activeAccounts, trendStart, monthEnd, cancellationToken);
 
         var recentTransactionsPage = await transactionQueries.GetPagedAsync(
             userId,
@@ -72,7 +71,6 @@ public class DashboardQueries(
             expenseGrowth,
             topExpenseCategories,
             trend,
-            balanceTrend,
             recentTransactionsPage.Items,
             accounts,
             insights);
@@ -96,31 +94,96 @@ public class DashboardQueries(
     }
 
     // Balance is cumulative, so the trend's starting point needs everything that
-    // ever happened on an active account, not just the six months being plotted —
+    // ever happened on an active account, not just the buckets being plotted —
     // unlike income/expense totals, which are naturally scoped to one period.
-    private async Task<IReadOnlyList<BalanceTrendPointDto>> GetBalanceTrendAsync(
-        Guid userId, IReadOnlyList<AccountDto> activeAccounts, DateOnly trendStart, DateOnly trendEnd, CancellationToken cancellationToken)
+    // Buckets are built at day granularity server-side regardless of the
+    // requested view, then aggregated per bucket — this way every granularity
+    // (day/week/fortnight/month/year) shares one query shape instead of five.
+    public async Task<IReadOnlyList<BalanceTrendPointDto>> GetBalanceTrendAsync(
+        Guid userId, BalanceTrendGranularity granularity, CancellationToken cancellationToken = default)
     {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var accounts = await accountQueries.GetForUserAsync(userId, cancellationToken);
+        var activeAccounts = accounts.Where(a => a.IsActive).ToList();
+
         if (activeAccounts.Count == 0)
         {
             return [];
         }
 
+        var buckets = BuildBalanceTrendBuckets(granularity, today);
         var activeAccountIds = activeAccounts.Select(a => a.Id).ToHashSet();
         var openingTotal = activeAccounts.Sum(a => a.OpeningBalance);
 
-        var baselineDelta = await GetNetBalanceDeltaAsync(userId, activeAccountIds, before: trendStart, cancellationToken);
-        var monthlyDeltas = await GetMonthlyNetBalanceDeltasAsync(userId, activeAccountIds, trendStart, trendEnd, cancellationToken);
+        var windowStart = buckets[0].Start;
+        var baselineDelta = await GetNetBalanceDeltaAsync(userId, activeAccountIds, before: windowStart, cancellationToken);
+        var dailyDeltas = await GetDailyNetBalanceDeltasAsync(userId, activeAccountIds, windowStart, today, cancellationToken);
 
         var runningBalance = openingTotal + baselineDelta;
         var result = new List<BalanceTrendPointDto>();
-        for (var month = trendStart; month <= trendEnd; month = month.AddMonths(1))
+        foreach (var (start, end) in buckets)
         {
-            runningBalance += monthlyDeltas.GetValueOrDefault((month.Year, month.Month), 0m);
-            result.Add(new BalanceTrendPointDto(month.Year, month.Month, runningBalance));
+            var bucketDelta = dailyDeltas.Where(kv => kv.Key >= start && kv.Key <= end).Sum(kv => kv.Value);
+            runningBalance += bucketDelta;
+            result.Add(new BalanceTrendPointDto(start, runningBalance));
         }
 
         return result;
+    }
+
+    private static IReadOnlyList<(DateOnly Start, DateOnly End)> BuildBalanceTrendBuckets(BalanceTrendGranularity granularity, DateOnly today) =>
+        granularity switch
+        {
+            BalanceTrendGranularity.Daily => RollingBuckets(today, stepDays: 1, count: 30),
+            BalanceTrendGranularity.Weekly => RollingBuckets(today, stepDays: 7, count: 12),
+            BalanceTrendGranularity.BiWeekly => RollingBuckets(today, stepDays: 14, count: 12),
+            BalanceTrendGranularity.Monthly => MonthlyBuckets(today, count: 12),
+            BalanceTrendGranularity.Yearly => YearlyBuckets(today, count: 5),
+            _ => throw new ArgumentOutOfRangeException(nameof(granularity), granularity, "Unhandled balance trend granularity."),
+        };
+
+    // Rolling, fixed-size windows ending today — used for Daily/Weekly/BiWeekly
+    // since those don't have an established calendar-aligned convention the way
+    // months and years do (no canonical "start of fortnight").
+    private static List<(DateOnly Start, DateOnly End)> RollingBuckets(DateOnly today, int stepDays, int count)
+    {
+        var buckets = new List<(DateOnly, DateOnly)>();
+        for (var i = count - 1; i >= 0; i--)
+        {
+            var end = today.AddDays(-i * stepDays);
+            var start = end.AddDays(-(stepDays - 1));
+            buckets.Add((start, end));
+        }
+
+        return buckets;
+    }
+
+    private static List<(DateOnly Start, DateOnly End)> MonthlyBuckets(DateOnly today, int count)
+    {
+        var monthStart = new DateOnly(today.Year, today.Month, 1);
+        var start = monthStart.AddMonths(-(count - 1));
+
+        var buckets = new List<(DateOnly, DateOnly)>();
+        for (var m = start; m <= monthStart; m = m.AddMonths(1))
+        {
+            buckets.Add((m, m.AddMonths(1).AddDays(-1)));
+        }
+
+        return buckets;
+    }
+
+    private static List<(DateOnly Start, DateOnly End)> YearlyBuckets(DateOnly today, int count)
+    {
+        var yearStart = new DateOnly(today.Year, 1, 1);
+        var start = new DateOnly(today.Year - (count - 1), 1, 1);
+
+        var buckets = new List<(DateOnly, DateOnly)>();
+        for (var y = start; y <= yearStart; y = y.AddYears(1))
+        {
+            buckets.Add((y, y.AddYears(1).AddDays(-1)));
+        }
+
+        return buckets;
     }
 
     private async Task<decimal> GetNetBalanceDeltaAsync(
@@ -141,35 +204,34 @@ public class DashboardQueries(
         return NetBalanceDelta(byType, transferIn);
     }
 
-    private async Task<Dictionary<(int Year, int Month), decimal>> GetMonthlyNetBalanceDeltasAsync(
+    private async Task<Dictionary<DateOnly, decimal>> GetDailyNetBalanceDeltasAsync(
         Guid userId, ISet<Guid> accountIds, DateOnly from, DateOnly to, CancellationToken cancellationToken)
     {
-        var byTypeMonthly = await db.Transactions
+        var byTypeDaily = await db.Transactions
             .Where(t => t.UserId == userId && accountIds.Contains(t.AccountId)
                 && t.TransactionDate >= from && t.TransactionDate <= to)
-            .GroupBy(t => new { t.TransactionDate.Year, t.TransactionDate.Month, t.TransactionType })
-            .Select(g => new { g.Key.Year, g.Key.Month, g.Key.TransactionType, Total = g.Sum(t => t.Amount) })
+            .GroupBy(t => new { t.TransactionDate, t.TransactionType })
+            .Select(g => new { g.Key.TransactionDate, g.Key.TransactionType, Total = g.Sum(t => t.Amount) })
             .ToListAsync(cancellationToken);
 
-        var transferInMonthly = await db.Transactions
+        var transferInDaily = await db.Transactions
             .Where(t => t.UserId == userId && t.TransactionType == TransactionType.Transfer
                 && t.TransferToAccountId != null && accountIds.Contains(t.TransferToAccountId!.Value)
                 && t.TransactionDate >= from && t.TransactionDate <= to)
-            .GroupBy(t => new { t.TransactionDate.Year, t.TransactionDate.Month })
-            .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(t => t.Amount) })
+            .GroupBy(t => t.TransactionDate)
+            .Select(g => new { Date = g.Key, Total = g.Sum(t => t.Amount) })
             .ToListAsync(cancellationToken);
 
-        var months = byTypeMonthly.Select(r => (r.Year, r.Month))
-            .Concat(transferInMonthly.Select(r => (r.Year, r.Month)))
+        var dates = byTypeDaily.Select(r => r.TransactionDate)
+            .Concat(transferInDaily.Select(r => r.Date))
             .Distinct();
 
-        var result = new Dictionary<(int, int), decimal>();
-        foreach (var (year, month) in months)
+        var result = new Dictionary<DateOnly, decimal>();
+        foreach (var date in dates)
         {
-            var byType = byTypeMonthly.Where(r => r.Year == year && r.Month == month)
-                .ToDictionary(r => r.TransactionType, r => r.Total);
-            var transferIn = transferInMonthly.Where(r => r.Year == year && r.Month == month).Sum(r => r.Total);
-            result[(year, month)] = NetBalanceDelta(byType, transferIn);
+            var byType = byTypeDaily.Where(r => r.TransactionDate == date).ToDictionary(r => r.TransactionType, r => r.Total);
+            var transferIn = transferInDaily.Where(r => r.Date == date).Sum(r => r.Total);
+            result[date] = NetBalanceDelta(byType, transferIn);
         }
 
         return result;

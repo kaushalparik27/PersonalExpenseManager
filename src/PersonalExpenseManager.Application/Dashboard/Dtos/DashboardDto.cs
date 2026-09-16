@@ -13,7 +13,6 @@ public record DashboardDto(
     decimal? ExpenseGrowthPercent,
     IReadOnlyList<CategoryAmountDto> TopExpenseCategories,
     IReadOnlyList<MonthlyAmountDto> IncomeVsExpenseTrend,
-    IReadOnlyList<BalanceTrendPointDto> BalanceTrend,
     IReadOnlyList<TransactionDto> RecentTransactions,
     IReadOnlyList<AccountDto> Accounts,
     IReadOnlyList<string> Insights);

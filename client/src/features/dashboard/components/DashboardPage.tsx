@@ -51,7 +51,7 @@ export function DashboardPage() {
       <InsightsBanner insights={dashboard.insights} />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <BalanceTrendChart data={dashboard.balanceTrend} />
+        <BalanceTrendChart totalBalance={dashboard.totalBalance} />
         <IncomeExpenseChart data={dashboard.incomeVsExpenseTrend} />
       </div>
 

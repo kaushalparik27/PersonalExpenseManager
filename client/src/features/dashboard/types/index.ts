@@ -18,9 +18,10 @@ export interface MonthlyAmount {
   expense: number
 }
 
+export type BalanceTrendGranularity = 'Daily' | 'Weekly' | 'BiWeekly' | 'Monthly' | 'Yearly'
+
 export interface BalanceTrendPoint {
-  year: number
-  month: number
+  periodStart: string
   balance: number
 }
 
@@ -34,7 +35,6 @@ export interface Dashboard {
   expenseGrowthPercent: number | null
   topExpenseCategories: CategoryAmount[]
   incomeVsExpenseTrend: MonthlyAmount[]
-  balanceTrend: BalanceTrendPoint[]
   recentTransactions: Transaction[]
   accounts: Account[]
   insights: string[]

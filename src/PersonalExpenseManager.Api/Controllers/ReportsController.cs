@@ -19,6 +19,14 @@ public class ReportsController(IDashboardQueries dashboardQueries, IReportsQueri
         return Ok(ApiResponse<DashboardDto>.Ok(dashboard));
     }
 
+    [HttpGet("balance-trend")]
+    public async Task<IActionResult> GetBalanceTrend(
+        [FromQuery] BalanceTrendGranularity granularity = BalanceTrendGranularity.Monthly, CancellationToken cancellationToken = default)
+    {
+        var trend = await dashboardQueries.GetBalanceTrendAsync(User.GetUserId(), granularity, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<BalanceTrendPointDto>>.Ok(trend));
+    }
+
     [HttpGet("income")]
     public async Task<IActionResult> GetIncomeReport([FromQuery] DateOnly? fromDate, [FromQuery] DateOnly? toDate, CancellationToken cancellationToken)
     {
